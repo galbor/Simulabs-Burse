@@ -26,7 +26,7 @@ namespace Simulabs_Burse_Console
         private static string deleteoffer = "delete";
         private static string allstocks = "all stocks info";
 
-
+        private static IStockMarket _stockMarket = StockMarket.Instance;
 
         static void Main(string[] args)
         {
@@ -49,8 +49,8 @@ namespace Simulabs_Burse_Console
                 }
             }
 
-            StockMarket.StartThreads();
-            Tests.RunAllTests();
+            _stockMarket.Init();
+            Tests.RunAllTests(_stockMarket);
 
             while (true)
             {
@@ -153,12 +153,12 @@ namespace Simulabs_Burse_Console
 
             foreach (var share in shares)
             {
-                StockMarket.CreateCompany(share);
+                _stockMarket.CreateCompany(share);
             }
 
             foreach (var trader in traders)
             {
-                StockMarket.CreateTrader(trader);
+                _stockMarket.CreateTrader(trader);
             }
         }
 
@@ -200,7 +200,7 @@ namespace Simulabs_Burse_Console
         {
             try
             {
-                Sale[] history = StockMarket.GetTraderFromId(id).GetRecentSales();
+                Sale[] history = _stockMarket.GetTraderFromId(id).GetRecentSales();
                 Console.WriteLine("Recent sale history:\n");
                 foreach (var sale in history)
                 {
@@ -220,7 +220,7 @@ namespace Simulabs_Burse_Console
 
             Console.WriteLine("Please write the trader's ID:");
             string input = GetInput();
-            while ((trader = StockMarket.GetTraderFromId(input)) == null)
+            while ((trader = _stockMarket.GetTraderFromId(input)) == null)
             {
                 if (input == quit) return;
                 Console.WriteLine("wrong ID, please try again. To abort write " + quit);
@@ -248,7 +248,7 @@ namespace Simulabs_Burse_Console
 
             Console.WriteLine("Please write the trader's ID:");
             string input = GetInput();
-            while ((trader = StockMarket.GetTraderFromId(input)) == null)
+            while ((trader = _stockMarket.GetTraderFromId(input)) == null)
             {
                 if (input == quit) return;
                 Console.WriteLine("wrong ID, please try again. To abort write " + quit);
@@ -257,7 +257,7 @@ namespace Simulabs_Burse_Console
 
             Console.WriteLine("Please write the company's ID:");
             input = GetInput();
-            while ((company = StockMarket.GetCompanyFromId(input)) == null)
+            while ((company = _stockMarket.GetCompanyFromId(input)) == null)
             {
                 if (input == quit) return;
                 Console.WriteLine("wrong ID, please try again. To abort write " + quit);
@@ -287,37 +287,37 @@ namespace Simulabs_Burse_Console
 
         static List<CompanyInfo> AllStocksInfo()
         {
-            return StockMarket.GetAllCompanies().Select(company => StockMarket.GetCompanyInfo(company.Id)).ToList();
+            return _stockMarket.GetAllCompanies().Select(company => _stockMarket.GetCompanyInfo(company.Id)).ToList();
         }
 
         static List<string[]> AllTraderNames()
         {
-            return StockMarket.GetAllTraders().Select(trader => new string[]{trader.Id, trader.Name }).ToList();
+            return _stockMarket.GetAllTraders().Select(trader => new string[]{trader.Id, trader.Name }).ToList();
         }
 
         static CompanyInfo GetCompanyInfo(string id)
         {
-            return StockMarket.GetCompanyInfo(id);
+            return _stockMarket.GetCompanyInfo(id);
         }
 
         static TraderInfo GetTraderInfo(string id)
         {
-            return StockMarket.GetTraderInfo(id);
+            return _stockMarket.GetTraderInfo(id);
         }
 
         static Sale[] GetRecentTraderHistory(string id)
         {
-            return StockMarket.GetTraderFromId(id).GetRecentSales();
+            return _stockMarket.GetTraderFromId(id).GetRecentSales();
         }
 
         static IOffer MakeSaleOffer(ITrader trader, ICompany company, decimal price, uint amount)
         {
-            return StockMarket.MakeOffer(trader, company, price, amount, true);
+            return _stockMarket.MakeOffer(trader, company, price, amount, true);
         }
 
         static IOffer MakeBuyOffer(ITrader trader, ICompany company, decimal price, uint amount)
         {
-            return StockMarket.MakeOffer(trader, company, price, amount, false);
+            return _stockMarket.MakeOffer(trader, company, price, amount, false);
         }
 
         static void RemoveOffer(string traderId, int offerId)
@@ -325,7 +325,7 @@ namespace Simulabs_Burse_Console
             var offerlst = GetTraderInfo(traderId).Offers.Where(offer => offer.OfferId == offerId).ToList();
             if (offerlst.Count == 0) return;
             IOffer offer = offerlst[0];
-            StockMarket.RemoveOffer(offer);
+            _stockMarket.RemoveOffer(offer);
         }
     }
 }

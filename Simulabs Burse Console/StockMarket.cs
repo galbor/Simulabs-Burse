@@ -11,32 +11,53 @@ using Simulabs_Burse_Console.Trader;
 
 namespace Simulabs_Burse_Console
 {
-    public static class StockMarket
+    public class StockMarket : IStockMarket
     {
-        private static IStockMarketFactory factory = new RegularStockMarketFactory();
+        private IStockMarketFactory factory = new RegularStockMarketFactory();
 
-        private static readonly Dictionary<string, ICompany> _companies = new Dictionary<string, ICompany>();
-        private static readonly Dictionary<string, ITrader> _traders = new Dictionary<string, ITrader>();
+        private readonly Dictionary<string, ICompany> _companies = new Dictionary<string, ICompany>();
+        private readonly Dictionary<string, ITrader> _traders = new Dictionary<string, ITrader>();
 
-        private static readonly Dictionary<string, List<IOffer>> _allTraderOffers = new Dictionary<string, List<IOffer>>(); //traderId -> list(offer)
-        private static readonly Dictionary<string, SortedSet<IOffer>> _allSellCompanyOffers = new Dictionary<string, SortedSet<IOffer>>(); //companyId -> list(offer)
-        private static readonly Dictionary<string, SortedSet<IOffer>> _allBuyCompanyOffers = new Dictionary<string, SortedSet<IOffer>>(); //companyId -> list(offer)
+        private readonly Dictionary<string, List<IOffer>> _allTraderOffers = new Dictionary<string, List<IOffer>>(); //traderId -> list(offer)
+        private readonly Dictionary<string, SortedSet<IOffer>> _allSellCompanyOffers = new Dictionary<string, SortedSet<IOffer>>(); //companyId -> list(offer)
+        private readonly Dictionary<string, SortedSet<IOffer>> _allBuyCompanyOffers = new Dictionary<string, SortedSet<IOffer>>(); //companyId -> list(offer)
 
-        private static readonly List<IOffer> _pendingOffers = new List<IOffer>();
-        private static readonly List<IOffer> _pendingDeleteOffers = new List<IOffer>();
+        private readonly List<IOffer> _pendingOffers = new List<IOffer>();
+        private readonly List<IOffer> _pendingDeleteOffers = new List<IOffer>();
 
-        private static bool _run = false;
+        private bool _run = false;
 
         private static object _lock = new Object();
-        private static bool _isDoingWork = false;
+        private bool _isDoingWork = false;
 
+        private static IStockMarket _instance = null;
 
-        public static List<ICompany> GetAllCompanies()
+        public static IStockMarket Instance
+        {
+            get { return GetInstance(); }
+        }
+
+        private StockMarket()
+        {
+        }
+
+        private static IStockMarket GetInstance()
+        {
+            if (_instance != null) return _instance;
+            lock (_lock)
+            {
+                if (_instance != null) return _instance;
+                _instance = new StockMarket();
+            }
+            return _instance;
+        }
+
+        public List<ICompany> GetAllCompanies()
         {
             return _companies.Values.ToList();
         }
 
-        public static List<ITrader> GetAllTraders()
+        public List<ITrader> GetAllTraders()
         {
             return _traders.Values.ToList();
         }
@@ -82,22 +103,16 @@ namespace Simulabs_Burse_Console
 
             IOffer[] res = new IOffer[offers.Count];
             offers.CopyTo(res);
-            res = res.Where(offer => offer != null && offer.IsLegal()).ToArray();
+            res = res.Where(offer => offer != null && offer.IsLegal()).Select(offer => offer.GetCopy()).ToArray();
             return res;
         }
 
-        /**
-         * returns different list so the real list can't be edited
-         */
-        public static IOffer[] GetTraderOffers(string id)
+        public IOffer[] GetTraderOffers(string id)
         {
             return GetOffersAsArray(_allTraderOffers ,id);
         }
 
-        /**
-         * returns different list so the real list can't be edited
-         */
-        public static IOffer[] GetCompanyOffers(string id)
+        public IOffer[] GetCompanyOffers(string id)
         {
             var sellOffers = GetOffersAsArray(_allSellCompanyOffers, id);
             var buyOffers = GetOffersAsArray(_allBuyCompanyOffers, id);
@@ -116,11 +131,7 @@ namespace Simulabs_Burse_Console
             return res;
         }
 
-        /**
-         * makes offer
-         * returns fitting offer
-         */
-        public static IOffer MakeOffer(ITrader trader, ICompany company, decimal price, uint amount, bool isSellOffer)
+        public IOffer MakeOffer(ITrader trader, ICompany company, decimal price, uint amount, bool isSellOffer)
         {
             IOffer offer = factory.NewOffer(company, trader, price, amount, isSellOffer);
             lock (_pendingOffers)
@@ -134,7 +145,7 @@ namespace Simulabs_Burse_Console
         /**
          * Remove offer (when the work thread gets to it)
          */
-        public static void RemoveOffer(IOffer offer)
+        public void RemoveOffer(IOffer offer)
         {
             lock (_pendingDeleteOffers)
             {
@@ -142,7 +153,7 @@ namespace Simulabs_Burse_Console
             }
         }
 
-        public static void RemoveOffers(IEnumerable<IOffer> offers)
+        public void RemoveOffers(IEnumerable<IOffer> offers)
         {
             lock (_pendingDeleteOffers)
             {
@@ -150,7 +161,7 @@ namespace Simulabs_Burse_Console
             }
         }
 
-        public static bool HasPendingRequests()
+        public bool HasPendingRequests()
         {
             if (_isDoingWork) return true;
 
@@ -159,6 +170,8 @@ namespace Simulabs_Burse_Console
             {
                 res = res || _pendingDeleteOffers.Any();
             }
+
+            if (res) return res;
             lock (_pendingOffers)
             {
                 res = res || _pendingOffers.Any();
@@ -171,7 +184,7 @@ namespace Simulabs_Burse_Console
          * removes offer
          * if offer doesn't exist, do nothing
          */
-        private static void DeleteOffer(IOffer offer)
+        private void DeleteOffer(IOffer offer)
         {
             lock (_pendingOffers)
             {
@@ -194,7 +207,7 @@ namespace Simulabs_Burse_Console
          * returns the offer or null if made sale
          * removes all sale offers of said trader and company if this is a buy offer, and vice versa
          */
-        private static void AddOffer(IOffer offer)
+        private void AddOffer(IOffer offer)
         {
             if (!offer.IsLegal()) return;
 
@@ -227,7 +240,7 @@ namespace Simulabs_Burse_Console
             }
         }
 
-        private static void MakeSale(IOffer offer, IOffer bestExistingOffer, SortedSet<IOffer> companyOffers)
+        private void MakeSale(IOffer offer, IOffer bestExistingOffer, SortedSet<IOffer> companyOffers)
         {
             uint amt = Math.Min(bestExistingOffer.Amount, offer.Amount);
 
@@ -261,7 +274,7 @@ namespace Simulabs_Burse_Console
         /**
          * deletes illegal or null offers
          */
-        private static void DeleteBadOffers(IOffer offer, SortedSet<IOffer> companyOffers)
+        private void DeleteBadOffers(IOffer offer, SortedSet<IOffer> companyOffers)
         {
             Predicate<IOffer> isBad = offer => offer == null || !offer.IsLegal();
 
@@ -295,7 +308,7 @@ namespace Simulabs_Burse_Console
             return bestOffer;
         }
 
-        public static void CreateCompany(Dictionary<string, object> jsonDictionary)
+        public void CreateCompany(Dictionary<string, object> jsonDictionary)
         {
             string id = JsonSerializer.Deserialize<string>((JsonElement)jsonDictionary["id"]);
             string name = JsonSerializer.Deserialize<string>((JsonElement)jsonDictionary["name"]);
@@ -314,7 +327,7 @@ namespace Simulabs_Burse_Console
             MakeOffer(trader, company, price, amount, true);
         }
 
-        public static void CreateTrader(Dictionary<string, object> jsonDictionary)
+        public void CreateTrader(Dictionary<string, object> jsonDictionary)
         {
             string id = JsonSerializer.Deserialize<string>((JsonElement)jsonDictionary["id"]);
             string name = JsonSerializer.Deserialize<string>((JsonElement)jsonDictionary["name"]);
@@ -328,7 +341,7 @@ namespace Simulabs_Burse_Console
             }
         }
 
-        public static void CreateTrader(ITrader trader)
+        public void CreateTrader(ITrader trader)
         {
             lock (_traders)
             {
@@ -336,29 +349,23 @@ namespace Simulabs_Burse_Console
             }
         }
 
-        /**
-         * returns null if no such company exists
-         */
-        public static ICompany GetCompanyFromId(string id)
+        public ICompany GetCompanyFromId(string id)
         {
             return _companies.GetValueOrDefault(id);
         }
-        /**
-         * returns null if no such trader exists
-         */
-        public static ITrader GetTraderFromId(string id)
+        public ITrader GetTraderFromId(string id)
         {
             return _traders.GetValueOrDefault(id);
         }
 
-        public static TraderInfo GetTraderInfo(string id)
+        public TraderInfo GetTraderInfo(string id)
         {
             ITrader trader = GetTraderFromId(id);
             if (trader == null) throw new ArgumentException("StockMarket.GetTraderInfo() id doesn't fit any trader");
             return new TraderInfo(trader.Id, trader.Name, trader.Money, trader.GetPortfolio(), GetTraderOffers(id));
         }
 
-        public static CompanyInfo GetCompanyInfo(string id)
+        public CompanyInfo GetCompanyInfo(string id)
         {
             ICompany company = GetCompanyFromId(id);
             if (company == null)
@@ -371,7 +378,7 @@ namespace Simulabs_Burse_Console
          * locks and gets list and clears it
          * does action on all list
          */
-        private static void DoWork<T>(List<T> lst, Action<T> action)
+        private void DoWork<T>(List<T> lst, Action<T> action)
         {
             List<T> copy;
             lock (lst)
@@ -387,7 +394,7 @@ namespace Simulabs_Burse_Console
 
 
 
-        private static void WorkThread()
+        private void WorkThread()
         {
             while (_run)
             {
@@ -400,7 +407,7 @@ namespace Simulabs_Burse_Console
         /**
          * I honestly don't think it matters if there's race conditions here
          */
-        private static void ChangeCompanyPrices()
+        private void ChangeCompanyPrices()
         {
             const int sleepTime = 20000; //MAGIC NUMBER
             while (_run)
@@ -413,11 +420,7 @@ namespace Simulabs_Burse_Console
             }
         }
 
-        /**
-         * starts threads if they're not running
-         * @return true iff started threads
-         */
-        public static bool StartThreads()
+        public bool Init()
         {
             lock (_lock)
             {
