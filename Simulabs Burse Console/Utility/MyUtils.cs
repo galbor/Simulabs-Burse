@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Simulabs_Burse_Console
+namespace Simulabs_Burse_Console.Utility
 {
     internal static class MyUtils
     {

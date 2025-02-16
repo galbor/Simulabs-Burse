@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Simulabs_Burse_Console.Trader;
 
 namespace Simulabs_Burse_Console
 {
@@ -68,7 +69,7 @@ namespace Simulabs_Burse_Console
             string pricystockid = "16";
             bool res = true;
 
-            Trader trader = StockMarket.GetTraderFromId(traderId);
+            ITrader trader = StockMarket.GetTraderFromId(traderId);
             if (trader == null)
             {
                 Console.Error.WriteLine("wrong trader id for TestBuy(): " + traderId);
@@ -77,8 +78,8 @@ namespace Simulabs_Burse_Console
 
             decimal prevMoney = trader.Money;
 
-            Company company = StockMarket.GetCompanyFromId(stockid); //100,000,000 shares for 1$
-            Company pricyCompany = StockMarket.GetCompanyFromId(pricystockid);
+            ICompany company = StockMarket.GetCompanyFromId(stockid); //100,000,000 shares for 1$
+            ICompany pricyCompany = StockMarket.GetCompanyFromId(pricystockid);
 
             StockMarket.MakeOffer(trader, company, prevMoney + 1, 1, false);
             StockMarket.MakeOffer(trader, pricyCompany, 1, 1, false);
@@ -137,11 +138,11 @@ namespace Simulabs_Burse_Console
          */
         private static void TestSell(string richtraderid, string poortraderid, string companyid)
         {
-            Trader richTrader = StockMarket.GetTraderFromId(richtraderid);
-            Trader poorTrader = StockMarket.GetTraderFromId(poortraderid);
-            Company company = StockMarket.GetCompanyFromId(companyid);
+            ITrader richTrader = StockMarket.GetTraderFromId(richtraderid);
+            ITrader poorTrader = StockMarket.GetTraderFromId(poortraderid);
+            ICompany company = StockMarket.GetCompanyFromId(companyid);
 
-            List<Offer> offers = new List<Offer>();
+            List<IOffer> offers = new List<IOffer>();
 
             decimal prevMoney = richTrader.Money;
 
@@ -237,10 +238,10 @@ namespace Simulabs_Burse_Console
          */
         private static void TestAbsurdSale(string stockownerid, string poortraderid)
         {
-            Trader stockOwner = StockMarket.GetTraderFromId(stockownerid);
-            Trader poorTrader = StockMarket.GetTraderFromId(poortraderid);
-            var idamtpair = new Trader.TraderInfo(stockOwner).Portfolio[0];
-            Company company = StockMarket.GetCompanyFromId(idamtpair.Key);
+            ITrader stockOwner = StockMarket.GetTraderFromId(stockownerid);
+            ITrader poorTrader = StockMarket.GetTraderFromId(poortraderid);
+            var idamtpair = StockMarket.GetTraderInfo(stockownerid).Portfolio[0];
+            ICompany company = StockMarket.GetCompanyFromId(idamtpair.Key);
 
             RemoveAllCompanyOffers(idamtpair.Key);
 
@@ -269,10 +270,10 @@ namespace Simulabs_Burse_Console
          */
         private static void TestMultithreading(string stockownerid, string traderid)
         {
-            Trader stockOwner = StockMarket.GetTraderFromId(stockownerid);
-            Trader trader = StockMarket.GetTraderFromId(traderid);
-            var idamtpair = new Trader.TraderInfo(stockOwner).Portfolio[0];
-            Company company = StockMarket.GetCompanyFromId(idamtpair.Key);
+            ITrader stockOwner = StockMarket.GetTraderFromId(stockownerid);
+            ITrader trader = StockMarket.GetTraderFromId(traderid);
+            var idamtpair = StockMarket.GetTraderInfo(stockownerid).Portfolio[0];
+            ICompany company = StockMarket.GetCompanyFromId(idamtpair.Key);
 
             RemoveAllCompanyOffers(idamtpair.Key);
 
@@ -355,11 +356,11 @@ namespace Simulabs_Burse_Console
          */
         private static void EmptyStock(string traderId, string companyId)
         {
-            Trader trader = StockMarket.GetTraderFromId(traderId);
-            Company company = StockMarket.GetCompanyFromId(companyId);
+            ITrader trader = StockMarket.GetTraderFromId(traderId);
+            ICompany company = StockMarket.GetCompanyFromId(companyId);
 
-            Offer[] offers = StockMarket.GetCompanyOffers(companyId);
-            foreach (Offer offer in offers)
+            IOffer[] offers = StockMarket.GetCompanyOffers(companyId);
+            foreach (IOffer offer in offers)
             {
                 if (offer.IsSellOffer)
                     StockMarket.MakeOffer(trader, company, offer.Price, offer.Amount, false);

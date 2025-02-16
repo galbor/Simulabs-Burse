@@ -5,13 +5,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Simulabs_Burse_Console
+namespace Simulabs_Burse_Console.Utility
 {
     internal class LimitedQueue<T> : Queue<T>
     {
         private readonly uint _limit;
 
-        public LimitedQueue(uint limit) :base((int)limit)
+        public LimitedQueue(uint limit) : base((int)limit)
         {
             _limit = limit;
         }

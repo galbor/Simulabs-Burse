@@ -7,6 +7,9 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Simulabs_Burse_Console.POD;
+using Simulabs_Burse_Console.Trader;
+using Simulabs_Burse_Console.Utility;
 
 namespace Simulabs_Burse_Console
 {
@@ -31,8 +34,8 @@ namespace Simulabs_Burse_Console
             Console.WriteLine("Please enter json path:");
             while (true)
             {
-                input = GetInput();
-                //input = "BurseJson.json";
+                //input = GetInput();
+                input = "BurseJson.json";
                 try
                 {
                     var json = LoadJson(input);
@@ -46,7 +49,7 @@ namespace Simulabs_Burse_Console
             }
 
             StockMarket.StartThreads();
-            //Tests.RunAllTests();
+            Tests.RunAllTests();
 
             while (true)
             {
@@ -154,7 +157,7 @@ namespace Simulabs_Burse_Console
         {
             try
             {
-                Trader.TraderInfo info = GetTraderInfo(id);
+                TraderInfo info = GetTraderInfo(id);
                 Console.WriteLine(info.ToString());
             }
             catch
@@ -167,7 +170,7 @@ namespace Simulabs_Burse_Console
         {
             try
             {
-                Company.CompanyInfo info = GetCompanyInfo(id);
+                CompanyInfo info = GetCompanyInfo(id);
                 Console.WriteLine(info.ToString());
             }
             catch
@@ -195,7 +198,7 @@ namespace Simulabs_Burse_Console
 
         private static void DeleteOfferInConsole()
         {
-            Trader trader;
+            ITrader trader;
             int offerId;
 
             Console.WriteLine("Please write the trader's ID:");
@@ -216,13 +219,13 @@ namespace Simulabs_Burse_Console
                 input = GetInput();
             }
 
-            RemoveOffer(trader._id, offerId);
+            RemoveOffer(trader.Id, offerId);
         }
 
-        private static void MakeOfferInConsole(Func<Trader, Company, decimal, uint, Offer> makeOfferFunc)
+        private static void MakeOfferInConsole(Func<ITrader, ICompany, decimal, uint, IOffer> makeOfferFunc)
         {
-            Trader trader;
-            Company company;
+            ITrader trader;
+            ICompany company;
             decimal price;
             uint amount;
 
@@ -265,24 +268,24 @@ namespace Simulabs_Burse_Console
             makeOfferFunc(trader, company, price, amount);
         }
 
-        static List<Company.CompanyInfo> AllStocksInfo()
+        static List<CompanyInfo> AllStocksInfo()
         {
-            return StockMarket.GetAllCompanies().Select(company => new Company.CompanyInfo(company)).ToList();
+            return StockMarket.GetAllCompanies().Select(company => StockMarket.GetCompanyInfo(company.Id)).ToList();
         }
 
         static List<string[]> AllTraderNames()
         {
-            return StockMarket.GetAllTraders().Select(trader => new string[]{trader._id, trader._name }).ToList();
+            return StockMarket.GetAllTraders().Select(trader => new string[]{trader.Id, trader.Name }).ToList();
         }
 
-        static Company.CompanyInfo GetCompanyInfo(string id)
+        static CompanyInfo GetCompanyInfo(string id)
         {
-            return new Company.CompanyInfo(StockMarket.GetCompanyFromId(id));
+            return StockMarket.GetCompanyInfo(id);
         }
 
-        static Trader.TraderInfo GetTraderInfo(string id)
+        static TraderInfo GetTraderInfo(string id)
         {
-            return new Trader.TraderInfo(StockMarket.GetTraderFromId(id));
+            return StockMarket.GetTraderInfo(id);
         }
 
         static Sale[] GetRecentTraderHistory(string id)
@@ -290,12 +293,12 @@ namespace Simulabs_Burse_Console
             return StockMarket.GetTraderFromId(id).GetRecentSales();
         }
 
-        static Offer MakeSaleOffer(Trader trader, Company company, decimal price, uint amount)
+        static IOffer MakeSaleOffer(ITrader trader, ICompany company, decimal price, uint amount)
         {
             return StockMarket.MakeOffer(trader, company, price, amount, true);
         }
 
-        static Offer MakeBuyOffer(Trader trader, Company company, decimal price, uint amount)
+        static IOffer MakeBuyOffer(ITrader trader, ICompany company, decimal price, uint amount)
         {
             return StockMarket.MakeOffer(trader, company, price, amount, false);
         }
@@ -304,7 +307,7 @@ namespace Simulabs_Burse_Console
         {
             var offerlst = GetTraderInfo(traderId).Offers.Where(offer => offer.OfferId == offerId).ToList();
             if (offerlst.Count == 0) return;
-            Offer offer = offerlst[0];
+            IOffer offer = offerlst[0];
             StockMarket.RemoveOffer(offer);
         }
     }
