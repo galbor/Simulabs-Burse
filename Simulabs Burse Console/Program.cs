@@ -24,6 +24,7 @@ namespace Simulabs_Burse_Console
         private static string makesaleoffer = "sell";
         private static string makebuyoffer = "buy";
         private static string deleteoffer = "delete";
+        private static string allstocks = "all stocks info";
 
 
 
@@ -58,15 +59,16 @@ namespace Simulabs_Burse_Console
                 if (input == quit) return;
                 if (input == help)
                 {
-                    Console.WriteLine("Write " + help + " for help");
-                    Console.WriteLine("Write " + quit + " to quit");
-                    Console.WriteLine("Write " + getnames + " to get all traders' names");
-                    Console.WriteLine("Write " + gettraderinfo + " and the trader id to get said trader's info");
-                    Console.WriteLine("Write " + getcompanyinfo + " and the company id to get said company's stock info");
-                    Console.WriteLine("Write " + gettraderhistory + " and the trader id to get the trader's recent sale history");
-                    Console.WriteLine("Write " + makesaleoffer + " to make a sale offer");
-                    Console.WriteLine("Write " + makebuyoffer + " to make a buy offer");
-                    Console.WriteLine("Write " + deleteoffer + " to delete an offer");
+                    PrintHelpStatement(help,"for help");
+                    PrintHelpStatement(quit,"to quit");
+                    PrintHelpStatement(getnames,"to get all traders' names");
+                    PrintHelpStatement(gettraderinfo,"and the trader id to get said trader's info");
+                    PrintHelpStatement(getcompanyinfo,"and the company id to get said company's stock info");
+                    PrintHelpStatement(gettraderhistory,"and the trader id to get the trader's recent sale history");
+                    PrintHelpStatement(makesaleoffer,"to make a sale offer");
+                    PrintHelpStatement(makebuyoffer,"to make a buy offer");
+                    PrintHelpStatement(deleteoffer,"to delete an offer");
+                    PrintHelpStatement(allstocks, "to learn about all the stocks");
                     continue;
                 }
 
@@ -112,7 +114,22 @@ namespace Simulabs_Burse_Console
                 {
                     DeleteOfferInConsole();
                 }
+
+                if (input == allstocks)
+                {
+                    foreach (var info in AllStocksInfo())
+                    {
+                        Console.WriteLine(info.ToString() + "\n");
+                    }
+                }
             }
+        }
+
+        private static void PrintHelpStatement(string command, string description)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendFormat("Write \'{0}\' {1}", command, description);
+            Console.WriteLine(sb.ToString());
         }
 
         private static string GetInput()
