@@ -16,10 +16,6 @@ namespace Simulabs_Burse_Console.Trader
         public override decimal Money { get; protected set; }
         private readonly LimitedQueue<Sale> _recentSaleHistory;
 
-        private static readonly Trader8History emptyTrader = new Trader8History("", "", 0);
-
-        public static Trader8History EmptyTrader { get => emptyTrader; }
-
         public Trader8History(string id, string name, decimal money)
         {
             Id = id;
@@ -62,13 +58,6 @@ namespace Simulabs_Burse_Console.Trader
         {
             base.SellStocks(companyId, price, amt);
             Money += price * amt;
-        }
-
-
-        public static void AddToEmptyTraderPortfolio(ICompany company, uint amount)
-        {
-            if (EmptyTrader._portfolio.ContainsKey(company.Id)) EmptyTrader._portfolio[company.Id] += amount;
-            else EmptyTrader._portfolio[company.Id] = amount;
         }
     }
 }
