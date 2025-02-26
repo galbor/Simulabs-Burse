@@ -4,12 +4,15 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Simulabs_Burse_Console.Trader;
 
 namespace Simulabs_Burse_Console
 {
     //if ids are the same for two tests, might cause issues
     internal static class Tests
     {
+
+        private static IStockMarket stockMarket = StockMarket.Instance;
         /**
          * tests:
          * buy stock    V
@@ -32,7 +35,7 @@ namespace Simulabs_Burse_Console
          * multithreading   V
          */
 
-        public static void RunAllTests()
+        public static void RunAllTests(IStockMarket stockMarket)
         {
             Thread t1 = new Thread(DoAllTestsThread);
             t1.Start();
@@ -68,7 +71,7 @@ namespace Simulabs_Burse_Console
             string pricystockid = "16";
             bool res = true;
 
-            Trader trader = StockMarket.GetTraderFromId(traderId);
+            ITrader trader = stockMarket.GetTraderFromId(traderId);
             if (trader == null)
             {
                 Console.Error.WriteLine("wrong trader id for TestBuy(): " + traderId);
@@ -77,12 +80,12 @@ namespace Simulabs_Burse_Console
 
             decimal prevMoney = trader.Money;
 
-            Company company = StockMarket.GetCompanyFromId(stockid); //100,000,000 shares for 1$
-            Company pricyCompany = StockMarket.GetCompanyFromId(pricystockid);
+            ICompany company = stockMarket.GetCompanyFromId(stockid); //100,000,000 shares for 1$
+            ICompany pricyCompany = stockMarket.GetCompanyFromId(pricystockid);
 
-            StockMarket.MakeOffer(trader, company, prevMoney + 1, 1, false);
-            StockMarket.MakeOffer(trader, pricyCompany, 1, 1, false);
-            while (StockMarket.GetTraderOffers(traderId).Length == 0)
+            stockMarket.MakeOffer(trader, company, prevMoney + 1, 1, false);
+            stockMarket.MakeOffer(trader, pricyCompany, 1, 1, false);
+            while (stockMarket.GetTraderOffers(traderId).Length == 0)
             {
                 Thread.Sleep(2); //wait for the offer to pass
                 if (trader.HasStock(pricystockid))
@@ -101,7 +104,7 @@ namespace Simulabs_Burse_Console
             uint stockAmt = trader.StockAmount(stockid);
             decimal salePrice = 5;
             decimal companyPrice = company.Price;
-            StockMarket.MakeOffer(trader, company, salePrice, 1,false);
+            stockMarket.MakeOffer(trader, company, salePrice, 1,false);
             while (trader.StockAmount(stockid) == stockAmt)
                 Thread.Sleep(1);
 
@@ -137,19 +140,19 @@ namespace Simulabs_Burse_Console
          */
         private static void TestSell(string richtraderid, string poortraderid, string companyid)
         {
-            Trader richTrader = StockMarket.GetTraderFromId(richtraderid);
-            Trader poorTrader = StockMarket.GetTraderFromId(poortraderid);
-            Company company = StockMarket.GetCompanyFromId(companyid);
+            ITrader richTrader = stockMarket.GetTraderFromId(richtraderid);
+            ITrader poorTrader = stockMarket.GetTraderFromId(poortraderid);
+            ICompany company = stockMarket.GetCompanyFromId(companyid);
 
-            List<Offer> offers = new List<Offer>();
+            List<IOffer> offers = new List<IOffer>();
 
             decimal prevMoney = richTrader.Money;
 
-            offers.Add(StockMarket.MakeOffer(richTrader, company, 10, 2, true));
-            offers.Add(StockMarket.MakeOffer(richTrader, company, 1, 3, true));
-            offers.Add(StockMarket.MakeOffer(richTrader, company, 8, 1, true));
+            offers.Add(stockMarket.MakeOffer(richTrader, company, 10, 2, true));
+            offers.Add(stockMarket.MakeOffer(richTrader, company, 1, 3, true));
+            offers.Add(stockMarket.MakeOffer(richTrader, company, 8, 1, true));
 
-            offers.Add(StockMarket.MakeOffer(poorTrader, company, 11, 5, false));
+            offers.Add(stockMarket.MakeOffer(poorTrader, company, 11, 5, false));
             while (richTrader.Money == prevMoney)
             {
                 Thread.Sleep(1);
@@ -163,7 +166,7 @@ namespace Simulabs_Burse_Console
                 Console.Error.WriteLine(errMessage.ToString());
             }
 
-            if (StockMarket.GetTraderOffers(poortraderid).Length > 0)
+            if (stockMarket.GetTraderOffers(poortraderid).Length > 0)
             {
                 Console.Error.WriteLine(
                     "TestSell() fail - sell to multiple buy offers (finished) didn't update correctly");
@@ -174,21 +177,21 @@ namespace Simulabs_Burse_Console
                 Console.Error.WriteLine("company price should be 10 now instead of " + company.Price);
             }
 
-            StockMarket.RemoveOffers(offers);
+            stockMarket.RemoveOffers(offers);
             offers.Clear();
 
-            while (StockMarket.HasPendingRequests())
+            while (stockMarket.HasPendingRequests())
             {
                 Thread.Sleep(1);
             }
 
             prevMoney = richTrader.Money;
 
-            offers.Add(StockMarket.MakeOffer(poorTrader, company, 11, 2, false));
-            offers.Add(StockMarket.MakeOffer(poorTrader, company, 12, 2, false));
-            offers.Add(StockMarket.MakeOffer(poorTrader, company, 10, 2, false));
+            offers.Add(stockMarket.MakeOffer(poorTrader, company, 11, 2, false));
+            offers.Add(stockMarket.MakeOffer(poorTrader, company, 12, 2, false));
+            offers.Add(stockMarket.MakeOffer(poorTrader, company, 10, 2, false));
 
-            offers.Add(StockMarket.MakeOffer(richTrader, company, 11, 5, true));
+            offers.Add(stockMarket.MakeOffer(richTrader, company, 11, 5, true));
 
             while (richTrader.Money == prevMoney)
                 Thread.Sleep(1);
@@ -202,7 +205,7 @@ namespace Simulabs_Burse_Console
             }
 
             {
-                var offer = StockMarket.GetTraderOffers(richtraderid)[0];
+                var offer = stockMarket.GetTraderOffers(richtraderid)[0];
                 if (offer.Price != 11 || offer.Amount != 1)
                 {
                     Console.Error.WriteLine(
@@ -212,16 +215,16 @@ namespace Simulabs_Burse_Console
 
             prevMoney = poorTrader.Money;
 
-            offers.Add(StockMarket.MakeOffer(richTrader, company, 1, 1, true));
-            offers.Add(StockMarket.MakeOffer(richTrader, company, 1, 1, true));
-            offers.Add(StockMarket.MakeOffer(richTrader, company, 1, 1, false));
+            offers.Add(stockMarket.MakeOffer(richTrader, company, 1, 1, true));
+            offers.Add(stockMarket.MakeOffer(richTrader, company, 1, 1, true));
+            offers.Add(stockMarket.MakeOffer(richTrader, company, 1, 1, false));
 
-            while (StockMarket.GetTraderOffers(richtraderid).Length == 0)
+            while (stockMarket.GetTraderOffers(richtraderid).Length == 0)
             {
                 Thread.Sleep(1);
             }
 
-            if (StockMarket.GetTraderOffers(richtraderid).Length != 1)
+            if (stockMarket.GetTraderOffers(richtraderid).Length != 1)
             {
                 Console.Error.WriteLine("TestSell() fail - didn't delete conflicting error");
             }
@@ -237,19 +240,19 @@ namespace Simulabs_Burse_Console
          */
         private static void TestAbsurdSale(string stockownerid, string poortraderid)
         {
-            Trader stockOwner = StockMarket.GetTraderFromId(stockownerid);
-            Trader poorTrader = StockMarket.GetTraderFromId(poortraderid);
-            var idamtpair = new Trader.TraderInfo(stockOwner).Portfolio[0];
-            Company company = StockMarket.GetCompanyFromId(idamtpair.Key);
+            ITrader stockOwner = stockMarket.GetTraderFromId(stockownerid);
+            ITrader poorTrader = stockMarket.GetTraderFromId(poortraderid);
+            var idamtpair = stockMarket.GetTraderInfo(stockownerid).Portfolio[0];
+            ICompany company = stockMarket.GetCompanyFromId(idamtpair.Key);
 
             RemoveAllCompanyOffers(idamtpair.Key);
 
             uint prevAmt = stockOwner.StockAmount(idamtpair.Key);
             decimal prevMoney = stockOwner.Money;
 
-            StockMarket.MakeOffer(poorTrader, company, poorTrader.Money * 0.75M, 1, false);
-            StockMarket.MakeOffer(poorTrader, company, poorTrader.Money * 0.75M, 1, false);
-            StockMarket.MakeOffer(stockOwner, company, 1, 2, true);
+            stockMarket.MakeOffer(poorTrader, company, poorTrader.Money * 0.75M, 1, false);
+            stockMarket.MakeOffer(poorTrader, company, poorTrader.Money * 0.75M, 1, false);
+            stockMarket.MakeOffer(stockOwner, company, 1, 2, true);
 
             while (stockOwner.Money == prevMoney)
             {
@@ -269,10 +272,10 @@ namespace Simulabs_Burse_Console
          */
         private static void TestMultithreading(string stockownerid, string traderid)
         {
-            Trader stockOwner = StockMarket.GetTraderFromId(stockownerid);
-            Trader trader = StockMarket.GetTraderFromId(traderid);
-            var idamtpair = new Trader.TraderInfo(stockOwner).Portfolio[0];
-            Company company = StockMarket.GetCompanyFromId(idamtpair.Key);
+            ITrader stockOwner = stockMarket.GetTraderFromId(stockownerid);
+            ITrader trader = stockMarket.GetTraderFromId(traderid);
+            var idamtpair = stockMarket.GetTraderInfo(stockownerid).Portfolio[0];
+            ICompany company = stockMarket.GetCompanyFromId(idamtpair.Key);
 
             RemoveAllCompanyOffers(idamtpair.Key);
 
@@ -286,9 +289,9 @@ namespace Simulabs_Burse_Console
             {
                 for (int i = 0; i < iterations; i++)
                 {
-                    StockMarket.MakeOffer(stockOwner, company, 3, 2, true);
-                    StockMarket.MakeOffer(stockOwner, company, 3, 1, true);
-                    StockMarket.MakeOffer(stockOwner, company, 3, 1, true);
+                    stockMarket.MakeOffer(stockOwner, company, 3, 2, true);
+                    stockMarket.MakeOffer(stockOwner, company, 3, 1, true);
+                    stockMarket.MakeOffer(stockOwner, company, 3, 1, true);
 
                     Thread.Sleep(1);
                 }
@@ -298,9 +301,9 @@ namespace Simulabs_Burse_Console
             {
                 for (int i = 0; i < iterations; i++)
                 {
-                    StockMarket.MakeOffer(trader, company, 3, 2, false);
-                    StockMarket.MakeOffer(trader, company, 3, 1, false);
-                    StockMarket.MakeOffer(trader, company, 3, 1, false);
+                    stockMarket.MakeOffer(trader, company, 3, 2, false);
+                    stockMarket.MakeOffer(trader, company, 3, 1, false);
+                    stockMarket.MakeOffer(trader, company, 3, 1, false);
                     Thread.Sleep(1);
                 }
             }
@@ -320,14 +323,10 @@ namespace Simulabs_Burse_Console
             tbuy1.Join();
             tbuy2.Join();
 
-            uint cnt = 0;
-            while (StockMarket.HasPendingRequests())
+            while (stockMarket.HasPendingRequests())
             {
                 Thread.Sleep(1);
-                cnt++;
             }
-
-            Console.WriteLine("Waited " + cnt + " milliseconds for TestMultithreading() to finish processing offers");
 
             if (stockOwner.Money != prevMoney + amtSold * 3)
             {
@@ -355,14 +354,14 @@ namespace Simulabs_Burse_Console
          */
         private static void EmptyStock(string traderId, string companyId)
         {
-            Trader trader = StockMarket.GetTraderFromId(traderId);
-            Company company = StockMarket.GetCompanyFromId(companyId);
+            ITrader trader = stockMarket.GetTraderFromId(traderId);
+            ICompany company = stockMarket.GetCompanyFromId(companyId);
 
-            Offer[] offers = StockMarket.GetCompanyOffers(companyId);
-            foreach (Offer offer in offers)
+            IOffer[] offers = stockMarket.GetCompanyOffers(companyId);
+            foreach (IOffer offer in offers)
             {
                 if (offer.IsSellOffer)
-                    StockMarket.MakeOffer(trader, company, offer.Price, offer.Amount, false);
+                    stockMarket.MakeOffer(trader, company, offer.Price, offer.Amount, false);
             }
             while (trader.StockAmount(companyId) < 10)
                 Thread.Sleep(1);
@@ -370,12 +369,12 @@ namespace Simulabs_Burse_Console
 
         private static void RemoveAllCompanyOffers(string companyid)
         {
-            while (StockMarket.GetCompanyOffers(companyid).Length != 0)
+            while (stockMarket.GetCompanyOffers(companyid).Length != 0)
             {
-                StockMarket.RemoveOffers(StockMarket.GetCompanyOffers(companyid));
+                stockMarket.RemoveOffers(stockMarket.GetCompanyOffers(companyid));
                 Thread.Sleep(1);
             }
-            while (StockMarket.HasPendingRequests())
+            while (stockMarket.HasPendingRequests())
             {
                 Thread.Sleep(1);
             }
