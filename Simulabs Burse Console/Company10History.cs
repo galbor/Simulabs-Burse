@@ -12,14 +12,12 @@ namespace Simulabs_Burse_Console
     {
         public string Id { get; }
         public string Name {get;}
-        public decimal Price { get; private set; }
         private readonly LimitedQueue<Sale> _recentSaleHistory;
 
-        public Company10History(string id, string name, decimal price)
+        public Company10History(string id, string name)
         {
             Id = id;
             Name = name;
-            Price = price;
             _recentSaleHistory = new LimitedQueue<Sale>(10); //MAGIC NUMBER specified in word document
         }
 
@@ -32,24 +30,11 @@ namespace Simulabs_Burse_Console
             return _recentSaleHistory.AsArray();
         }
 
-        /**
-         * randomly changes prices
-         * using a somewhat normal distribution (without negatives)
-         */
-        public void RandomChangePrice()
-        {
-            decimal stdDev = Price / 10; //MAGIC NUMBER
-            decimal distanceFromZero = 0.5M; //MAGIC NUMBER
-            Price = Math.Abs(MyUtils.NormalDistribution(Price, stdDev)-distanceFromZero) + distanceFromZero;
-        }
-
-
         public void AddSale(Sale sale)
         {
             if (sale.CompanyId != Id) throw new ArgumentException("ICompany.AddSale() added sale with wrong company");
 
             _recentSaleHistory.Enqueue(sale);
-            Price = sale.Price;
         }
     }
 }

@@ -6,13 +6,6 @@ public interface ICompany
 {
     public string Id { get; }
     public string Name {get;}
-    public decimal Price { get;}
-
-
-    /**
-     * randomly changes prices
-     */
-    public void RandomChangePrice();
 
     /**
      * returns recent sales

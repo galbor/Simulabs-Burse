@@ -4,7 +4,7 @@ namespace Simulabs_Burse_Console.Factories;
 
 public interface IStockMarketFactory
 {
-    public ICompany NewCompany(string id, string name, decimal price);
+    public ICompany NewCompany(string id, string name);
     public ITrader NewTrader(string id, string name, decimal money);
     /**
      * trader should start with @param amount of @pram company 's stock in portfolio

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Simulabs_Burse_Console.Factories;
 using Simulabs_Burse_Console.POD;
 using Simulabs_Burse_Console.Trader;
+using Simulabs_Burse_Console.Utility;
 
 namespace Simulabs_Burse_Console
 {
@@ -16,7 +17,7 @@ namespace Simulabs_Burse_Console
     {
         private IStockMarketFactory factory = new RegularStockMarketFactory();
 
-        private readonly Dictionary<string, ICompany> _companies = new Dictionary<string, ICompany>();
+        private readonly Dictionary<string, IStockMarket.CompanyAndPrice> _companies = new Dictionary<string, IStockMarket.CompanyAndPrice>(); //_companies and prices
         private readonly Dictionary<string, ITrader> _traders = new Dictionary<string, ITrader>();
 
         private readonly Dictionary<string, List<IOffer>> _allTraderOffers = new Dictionary<string, List<IOffer>>(); //traderId -> list(offer)
@@ -55,7 +56,7 @@ namespace Simulabs_Burse_Console
 
         public List<ICompany> GetAllCompanies()
         {
-            return _companies.Values.ToList();
+            return _companies.Values.Select(x => x.Company).ToList();
         }
 
         public List<ITrader> GetAllTraders()
@@ -278,6 +279,7 @@ namespace Simulabs_Burse_Console
             GetTraderFromId(bestExistingOffer.Trader.Id).MakeSale(newSale);
             GetTraderFromId(offer.Trader.Id).MakeSale(newSale);
             GetCompanyFromId(offer.Company.Id).AddSale(newSale);
+            GetCompanyAndPriceFromId(offer.Company.Id).Price = newSale.Price;
 
             return offer;
         }
@@ -335,11 +337,11 @@ namespace Simulabs_Burse_Console
             decimal price = JsonSerializer.Deserialize<decimal>((JsonElement)jsonDictionary["currentPrice"]);
             uint amount = JsonSerializer.Deserialize<uint>((JsonElement)jsonDictionary["amount"]);
 
-            ICompany company = factory.NewCompany(id, name, price);
+            ICompany company = factory.NewCompany(id, name);
 
             lock (_companies)
             {
-                _companies.Add(company.Id, company);
+                _companies.Add(company.Id, new IStockMarket.CompanyAndPrice(company, price));
             }
 
             ITrader trader = factory.NewCompanyTrader(company, amount);
@@ -369,9 +371,15 @@ namespace Simulabs_Burse_Console
             }
         }
 
-        public ICompany GetCompanyFromId(string id)
+        private IStockMarket.CompanyAndPrice GetCompanyAndPriceFromId(string id)
         {
             return _companies.GetValueOrDefault(id);
+        }
+
+        public ICompany GetCompanyFromId(string id)
+        {
+            IStockMarket.CompanyAndPrice resContainer = GetCompanyAndPriceFromId(id);
+            return resContainer == null ? null : resContainer.Company;
         }
         public ITrader GetTraderFromId(string id)
         {
@@ -387,11 +395,11 @@ namespace Simulabs_Burse_Console
 
         public CompanyInfo GetCompanyInfo(string id)
         {
-            ICompany company = GetCompanyFromId(id);
-            if (company == null)
+            var companyContainer = GetCompanyAndPriceFromId(id);
+            if (companyContainer == null)
                 throw new ArgumentException("StockMarket.GetCompanyInfo() id doesn't fit any company");
-            return new CompanyInfo(company.Id, company.Name, company.Price, GetCompanyOffers(id),
-                company.GetRecentSales());
+            return new CompanyInfo(companyContainer.Company.Id, companyContainer.Company.Name,
+                companyContainer.Price, GetCompanyOffers(id), companyContainer.Company.GetRecentSales());
         }
 
         /**
@@ -445,11 +453,22 @@ namespace Simulabs_Burse_Console
             while (_run)
             {
                 Thread.Sleep(sleepTime);
-                foreach (var company in _companies.Values)
+                foreach (var companyContainer in _companies.Values)
                 {
-                    company.RandomChangePrice();
+                    companyContainer.Price = NewPrice(companyContainer.Price);
                 }
             }
+        }
+
+        /**
+         * gets random non-negative decimal based on prev decimal
+         * using a somewhat normal distribution (without negatives)
+         */
+        private decimal NewPrice(decimal prevPrice)
+        {
+            decimal stdDev = prevPrice / 10; //MAGIC NUMBER
+            decimal distanceFromZero = 0.5M; //MAGIC NUMBER
+            return Math.Abs(MyUtils.NormalDistribution(prevPrice, stdDev) - distanceFromZero) + distanceFromZero;
         }
 
         public bool Init()

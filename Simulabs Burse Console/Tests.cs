@@ -103,7 +103,7 @@ namespace Simulabs_Burse_Console
             prevMoney = trader.Money;
             uint stockAmt = trader.StockAmount(stockid);
             decimal salePrice = 5;
-            decimal companyPrice = company.Price;
+            decimal companyPrice = stockMarket.GetCompanyInfo(company.Id).Price;
             stockMarket.MakeOffer(trader, company, salePrice, 1,false);
             while (trader.StockAmount(stockid) == stockAmt)
                 Thread.Sleep(1);
@@ -171,9 +171,12 @@ namespace Simulabs_Burse_Console
                     "TestSell() fail - sell to multiple buy offers (finished) didn't update correctly");
             }
 
-            if (company.Price != 10)
             {
-                Console.Error.WriteLine("company price should be 10 now instead of " + company.Price);
+                var price = stockMarket.GetCompanyInfo(company.Id).Price;
+                if (price != 10)
+                {
+                    Console.Error.WriteLine("company price should be 10 now instead of " + price);
+                }
             }
 
             stockMarket.RemoveOffers(stockMarket.GetTraderOffers(richtraderid));

@@ -11,9 +11,9 @@ namespace Simulabs_Burse_Console.Factories
     {
         public RegularStockMarketFactory() { }
 
-        public ICompany NewCompany(string id, string name, decimal price)
+        public ICompany NewCompany(string id, string name)
         {
-            return new Company10History(id, name, price);
+            return new Company10History(id, name);
         }
 
         public IOffer NewOffer(ICompany company, ITrader trader, decimal price, uint amount, bool isSellOffer)
