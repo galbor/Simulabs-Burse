@@ -12,7 +12,7 @@ namespace Simulabs_Burse_Console
         public ICompany Company { get; }
         public ITrader Trader {get;}
         public decimal Price {get;}
-        public uint Amount { get; private set; }
+        public uint Amount { get;}
         public bool IsSellOffer { get; }
         public int OfferId {get;}
 
@@ -34,21 +34,6 @@ namespace Simulabs_Burse_Console
             this.Amount = other.Amount;
             this.IsSellOffer = other.IsSellOffer;
             this.OfferId = other.OfferId;
-        }
-
-        public int CompareTo(object other)
-        {
-            if (other == null) return 1;
-            if (Equals(other)) return 0;
-            if (other is not IOffer) return other.GetHashCode() - GetHashCode();
-
-            IOffer otheroffer = (IOffer)other;
-
-            if (Price == otheroffer.Price) return otheroffer.OfferId - OfferId;
-
-            if (Price > otheroffer.Price) return 1;
-            return -1;
-
         }
     }
 }

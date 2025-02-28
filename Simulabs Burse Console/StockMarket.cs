@@ -82,7 +82,7 @@ namespace Simulabs_Burse_Console
         {
             if (!offers.TryGetValue(id, out SortedSet<IOffer> res))
             {
-                res = new SortedSet<IOffer>();
+                res = new SortedSet<IOffer>(new OfferComparerByPrice());
                 offers.Add(id, res);
             }
 
