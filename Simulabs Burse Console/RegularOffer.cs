@@ -36,18 +36,6 @@ namespace Simulabs_Burse_Console
             this.OfferId = other.OfferId;
         }
 
-        /**
-         * if sell offer checks the seller has the stock
-         * if buy offer checks the buyer has the money
-         */
-        public bool IsLegal()
-        {
-            if (IsSellOffer && Trader.StockAmount(Company.Id) < Amount) return false;
-            if (!IsSellOffer && Trader.Money < Price) return false;
-            return true;
-        }
-
-
         public int CompareTo(object other)
         {
             if (other == null) return 1;

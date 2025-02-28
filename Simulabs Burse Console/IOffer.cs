@@ -20,10 +20,4 @@ public interface IOffer : IComparable
         lock (_lock)
             return _cnt++;
     }
-
-    /**
-     * if sell offer checks the seller has the stock
-     * if buy offer checks the buyer has the money
-     */
-    public bool IsLegal();
 }

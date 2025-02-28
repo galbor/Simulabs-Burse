@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -93,7 +94,7 @@ namespace Simulabs_Burse_Console
             var offers = GetOfferList(offersDict, id);
             IOffer[] res = new IOffer[offers.Count];
             offers.CopyTo(res);
-            res = res.Where(offer => offer.IsLegal()).ToArray();
+            res = res.Where(IsLegalOffer).ToArray();
             return res;
         }
 
@@ -103,7 +104,7 @@ namespace Simulabs_Burse_Console
 
             IOffer[] res = new IOffer[offers.Count];
             offers.CopyTo(res);
-            res = res.Where(offer => offer != null && offer.IsLegal()).ToArray();
+            res = res.Where(IsLegalOffer).ToArray();
             return res;
         }
 
@@ -209,7 +210,7 @@ namespace Simulabs_Burse_Console
          */
         private void AddOffer(IOffer offer)
         {
-            if (!offer.IsLegal()) return;
+            if (!IsLegalOffer(offer)) return;
 
             List<IOffer> traderOffers = GetOfferList(_allTraderOffers, offer.Trader.Id);
             var companyOffers = offer.IsSellOffer ?
@@ -224,8 +225,8 @@ namespace Simulabs_Burse_Console
             DeleteBadOffers(offer, companyOffers);
 
             IOffer bestExistingOffer;
-            while ((bestExistingOffer = FindFittingOffer(companyOffers, offer.Price, offer.IsSellOffer)) != null
-                   && bestExistingOffer.IsLegal() && offer.Amount > 0)
+            while (IsLegalOffer(bestExistingOffer = FindFittingOffer(companyOffers, offer.Price, offer.IsSellOffer))
+                   && offer.Amount > 0)
             {
                 offer = MakeSale(offer, bestExistingOffer, companyOffers);
             }
@@ -295,15 +296,15 @@ namespace Simulabs_Burse_Console
          */
         private void DeleteBadOffers(IOffer offer, SortedSet<IOffer> companyOffers)
         {
-            Predicate<IOffer> isBad = offer => offer == null || !offer.IsLegal();
+            static bool IsBad(IOffer offer) => !IsLegalOffer(offer);
 
-            var badOffers = companyOffers.Where(offer => isBad(offer));
+            var badOffers = companyOffers.Where(IsBad);
             foreach (var badOffer in badOffers)
             {
                 GetOfferList(_allTraderOffers, badOffer.Trader.Id).Remove(badOffer);
             }
 
-            companyOffers.RemoveWhere(isBad);
+            companyOffers.RemoveWhere(IsBad);
         }
 
         /**
@@ -317,7 +318,7 @@ namespace Simulabs_Burse_Console
 
             IOffer bestOffer = isSellOffer ? companyOffers.Max : companyOffers.Min;
 
-            if (!bestOffer.IsLegal()) return null;
+            if (!IsLegalOffer(bestOffer)) return null;
 
             if (bestOffer.Price == price) return bestOffer;
 
@@ -391,6 +392,18 @@ namespace Simulabs_Burse_Console
                 throw new ArgumentException("StockMarket.GetCompanyInfo() id doesn't fit any company");
             return new CompanyInfo(company.Id, company.Name, company.Price, GetCompanyOffers(id),
                 company.GetRecentSales());
+        }
+
+        /**
+        * if sell offer checks the seller has the stock
+        * if buy offer checks the buyer has the money
+        */
+        private static bool IsLegalOffer(IOffer offer)
+        {
+            if (offer == null) return false;
+            if (offer.IsSellOffer && offer.Trader.StockAmount(offer.Company.Id) < offer.Amount) return false;
+            if (!offer.IsSellOffer && offer.Trader.Money < offer.Price) return false;
+            return true;
         }
 
         /**
