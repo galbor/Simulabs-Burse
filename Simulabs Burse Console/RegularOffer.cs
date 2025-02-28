@@ -15,7 +15,6 @@ namespace Simulabs_Burse_Console
         public uint Amount { get; private set; }
         public bool IsSellOffer { get; }
         public int OfferId {get;}
-        private bool _isCopy;
 
         public RegularOffer(ICompany company, ITrader trader, decimal price, uint amount, bool isSellOffer)
         {
@@ -25,7 +24,6 @@ namespace Simulabs_Burse_Console
             this.Amount = amount;
             this.IsSellOffer = isSellOffer;
             this.OfferId = IOffer.GenerateOfferId();
-            _isCopy = false;
         }
 
         private RegularOffer(IOffer other)
@@ -36,25 +34,6 @@ namespace Simulabs_Burse_Console
             this.Amount = other.Amount;
             this.IsSellOffer = other.IsSellOffer;
             this.OfferId = other.OfferId;
-            _isCopy = true;
-        }
-
-        public IOffer GetCopy()
-        {
-            return new RegularOffer(this);
-        }
-
-        /**
-         * does Amount -= toRemove
-         * doesn't do it if toRemove > Amount
-         * @return true if successful
-         */
-        public bool RemoveFromAmount(uint toRemove)
-        {
-            if (toRemove > Amount) return false;
-            if (_isCopy) return false;
-            Amount -= toRemove;
-            return true;
         }
 
         /**

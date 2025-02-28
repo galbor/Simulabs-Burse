@@ -19,8 +19,8 @@ namespace Simulabs_Burse_Console
         private readonly Dictionary<string, ITrader> _traders = new Dictionary<string, ITrader>();
 
         private readonly Dictionary<string, List<IOffer>> _allTraderOffers = new Dictionary<string, List<IOffer>>(); //traderId -> list(offer)
-        private readonly Dictionary<string, SortedSet<IOffer>> _allSellCompanyOffers = new Dictionary<string, SortedSet<IOffer>>(); //companyId -> list(offer)
-        private readonly Dictionary<string, SortedSet<IOffer>> _allBuyCompanyOffers = new Dictionary<string, SortedSet<IOffer>>(); //companyId -> list(offer)
+        private readonly Dictionary<string, SortedSet<IOffer>> _allSellCompanyOffers = new Dictionary<string, SortedSet<IOffer>>(); //companyId -> set(offer)
+        private readonly Dictionary<string, SortedSet<IOffer>> _allBuyCompanyOffers = new Dictionary<string, SortedSet<IOffer>>(); //companyId -> set(offer)
 
         private readonly List<IOffer> _pendingOffers = new List<IOffer>();
         private readonly List<IOffer> _pendingDeleteOffers = new List<IOffer>();
@@ -103,7 +103,7 @@ namespace Simulabs_Burse_Console
 
             IOffer[] res = new IOffer[offers.Count];
             offers.CopyTo(res);
-            res = res.Where(offer => offer != null && offer.IsLegal()).Select(offer => offer.GetCopy()).ToArray();
+            res = res.Where(offer => offer != null && offer.IsLegal()).ToArray();
             return res;
         }
 
@@ -227,7 +227,7 @@ namespace Simulabs_Burse_Console
             while ((bestExistingOffer = FindFittingOffer(companyOffers, offer.Price, offer.IsSellOffer)) != null
                    && bestExistingOffer.IsLegal() && offer.Amount > 0)
             {
-                MakeSale(offer, bestExistingOffer, companyOffers);
+                offer = MakeSale(offer, bestExistingOffer, companyOffers);
             }
 
             if (offer.Amount == 0) return;
@@ -240,18 +240,35 @@ namespace Simulabs_Burse_Console
             }
         }
 
-        private void MakeSale(IOffer offer, IOffer bestExistingOffer, SortedSet<IOffer> companyOffers)
+        /**
+         * @return new IOffer with res.Amount = prevOffer.Amount - amtToRemove
+         */
+        private IOffer OfferWithLessAmt(IOffer prevOffer, uint amtToRemove)
+        {
+            return factory.NewOffer(prevOffer.Company, prevOffer.Trader, prevOffer.Price,
+                prevOffer.Amount - amtToRemove, prevOffer.IsSellOffer);
+        }
+
+        /*
+         * @return offer changed
+         */
+        private IOffer MakeSale(IOffer offer, IOffer bestExistingOffer, SortedSet<IOffer> companyOffers)
         {
             uint amt = Math.Min(bestExistingOffer.Amount, offer.Amount);
+            var traderOffers = GetOfferList(_allTraderOffers, bestExistingOffer.Trader.Id);
 
-            if (bestExistingOffer.Amount == amt)
+
+            traderOffers.Remove(bestExistingOffer);
+            companyOffers.Remove(bestExistingOffer);
+
+            bestExistingOffer = OfferWithLessAmt(bestExistingOffer, amt);
+            offer = OfferWithLessAmt(offer, amt);
+
+            if (bestExistingOffer.Amount > 0)
             {
-                GetOfferList(_allTraderOffers, bestExistingOffer.Trader.Id).Remove(bestExistingOffer);
-                companyOffers.Remove(bestExistingOffer);
+                traderOffers.Add(bestExistingOffer);
+                companyOffers.Add(bestExistingOffer);
             }
-
-            bestExistingOffer.RemoveFromAmount(amt);
-            offer.RemoveFromAmount(amt);
 
             string seller = offer.IsSellOffer ? offer.Trader.Id : bestExistingOffer.Trader.Id;
             string buyer = !offer.IsSellOffer ? offer.Trader.Id : bestExistingOffer.Trader.Id;
@@ -260,6 +277,8 @@ namespace Simulabs_Burse_Console
             GetTraderFromId(bestExistingOffer.Trader.Id).MakeSale(newSale);
             GetTraderFromId(offer.Trader.Id).MakeSale(newSale);
             GetCompanyFromId(offer.Company.Id).AddSale(newSale);
+
+            return offer;
         }
 
         /**

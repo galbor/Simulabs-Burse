@@ -144,15 +144,14 @@ namespace Simulabs_Burse_Console
             ITrader poorTrader = stockMarket.GetTraderFromId(poortraderid);
             ICompany company = stockMarket.GetCompanyFromId(companyid);
 
-            List<IOffer> offers = new List<IOffer>();
 
             decimal prevMoney = richTrader.Money;
 
-            offers.Add(stockMarket.MakeOffer(richTrader, company, 10, 2, true));
-            offers.Add(stockMarket.MakeOffer(richTrader, company, 1, 3, true));
-            offers.Add(stockMarket.MakeOffer(richTrader, company, 8, 1, true));
+            stockMarket.MakeOffer(richTrader, company, 10, 2, true);
+            stockMarket.MakeOffer(richTrader, company, 1, 3, true);
+            stockMarket.MakeOffer(richTrader, company, 8, 1, true);
 
-            offers.Add(stockMarket.MakeOffer(poorTrader, company, 11, 5, false));
+            stockMarket.MakeOffer(poorTrader, company, 11, 5, false);
             while (richTrader.Money == prevMoney)
             {
                 Thread.Sleep(1);
@@ -177,8 +176,8 @@ namespace Simulabs_Burse_Console
                 Console.Error.WriteLine("company price should be 10 now instead of " + company.Price);
             }
 
-            stockMarket.RemoveOffers(offers);
-            offers.Clear();
+            stockMarket.RemoveOffers(stockMarket.GetTraderOffers(richtraderid));
+            stockMarket.RemoveOffers(stockMarket.GetTraderOffers(poortraderid));
 
             while (stockMarket.HasPendingRequests())
             {
@@ -187,13 +186,13 @@ namespace Simulabs_Burse_Console
 
             prevMoney = richTrader.Money;
 
-            offers.Add(stockMarket.MakeOffer(poorTrader, company, 11, 2, false));
-            offers.Add(stockMarket.MakeOffer(poorTrader, company, 12, 2, false));
-            offers.Add(stockMarket.MakeOffer(poorTrader, company, 10, 2, false));
+            stockMarket.MakeOffer(poorTrader, company, 11, 2, false);
+            stockMarket.MakeOffer(poorTrader, company, 12, 2, false);
+            stockMarket.MakeOffer(poorTrader, company, 10, 2, false);
 
-            offers.Add(stockMarket.MakeOffer(richTrader, company, 11, 5, true));
+            stockMarket.MakeOffer(richTrader, company, 11, 5, true);
 
-            while (richTrader.Money == prevMoney)
+            while (stockMarket.HasPendingRequests())
                 Thread.Sleep(1);
 
             if (richTrader.Money != prevMoney + 46)
@@ -213,13 +212,12 @@ namespace Simulabs_Burse_Console
                 }
             }
 
-            prevMoney = poorTrader.Money;
 
-            offers.Add(stockMarket.MakeOffer(richTrader, company, 1, 1, true));
-            offers.Add(stockMarket.MakeOffer(richTrader, company, 1, 1, true));
-            offers.Add(stockMarket.MakeOffer(richTrader, company, 1, 1, false));
+            stockMarket.MakeOffer(richTrader, company, 1, 1, true);
+            stockMarket.MakeOffer(richTrader, company, 1, 1, true);
+            stockMarket.MakeOffer(richTrader, company, 1, 1, false);
 
-            while (stockMarket.GetTraderOffers(richtraderid).Length == 0)
+            while (stockMarket.HasPendingRequests())
             {
                 Thread.Sleep(1);
             }

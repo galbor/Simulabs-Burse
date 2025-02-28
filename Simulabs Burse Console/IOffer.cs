@@ -21,15 +21,6 @@ public interface IOffer : IComparable
             return _cnt++;
     }
 
-    public IOffer GetCopy();
-
-    /**
-     * does Amount -= toRemove
-     * doesn't do it if toRemove > Amount
-     * @return true if successful
-     */
-    public bool RemoveFromAmount(uint toRemove);
-
     /**
      * if sell offer checks the seller has the stock
      * if buy offer checks the buyer has the money
