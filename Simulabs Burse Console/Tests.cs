@@ -152,7 +152,7 @@ namespace Simulabs_Burse_Console
             stockMarket.MakeOffer(richTrader, company, 8, 1, true);
 
             stockMarket.MakeOffer(poorTrader, company, 11, 5, false);
-            while (richTrader.Money == prevMoney)
+            while (stockMarket.HasPendingRequests())
             {
                 Thread.Sleep(1);
             }
@@ -179,7 +179,8 @@ namespace Simulabs_Burse_Console
             stockMarket.RemoveOffers(stockMarket.GetTraderOffers(richtraderid));
             stockMarket.RemoveOffers(stockMarket.GetTraderOffers(poortraderid));
 
-            while (stockMarket.HasPendingRequests())
+            while (stockMarket.GetTraderOffers(poortraderid).Length > 0 ||
+                   stockMarket.GetTraderOffers(richtraderid).Length > 0)
             {
                 Thread.Sleep(1);
             }
