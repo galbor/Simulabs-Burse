@@ -9,7 +9,12 @@ namespace Simulabs_Burse_Console.Factories
 {
     public class RegularStockMarketFactory : IStockMarketFactory
     {
-        public RegularStockMarketFactory() { }
+        private IIdGenerator<int> _offerIdGenerator;
+
+        public RegularStockMarketFactory()
+        {
+            _offerIdGenerator = new IntIdGenerator();
+        }
 
         public ICompany NewCompany(string id, string name)
         {
@@ -18,7 +23,7 @@ namespace Simulabs_Burse_Console.Factories
 
         public IOffer NewOffer(ICompany company, ITrader trader, decimal price, uint amount, bool isSellOffer)
         {
-            return new RegularOffer(company, trader, price, amount, isSellOffer);
+            return new RegularOffer(_offerIdGenerator, company, trader, price, amount, isSellOffer);
         }
 
         public ITrader NewTrader(string id, string name, decimal money)

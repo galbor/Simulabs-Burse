@@ -16,24 +16,14 @@ namespace Simulabs_Burse_Console
         public bool IsSellOffer { get; }
         public int OfferId {get;}
 
-        public RegularOffer(ICompany company, ITrader trader, decimal price, uint amount, bool isSellOffer)
+        public RegularOffer(IIdGenerator<int> idGenerator, ICompany company, ITrader trader, decimal price, uint amount, bool isSellOffer)
         {
             this.Company = company;
             this.Trader = trader;
             this.Price = price;
             this.Amount = amount;
             this.IsSellOffer = isSellOffer;
-            this.OfferId = IOffer.GenerateOfferId();
-        }
-
-        private RegularOffer(IOffer other)
-        {
-            this.Company = other.Company;
-            this.Trader = other.Trader;
-            this.Price = other.Price;
-            this.Amount = other.Amount;
-            this.IsSellOffer = other.IsSellOffer;
-            this.OfferId = other.OfferId;
+            this.OfferId = idGenerator.Next();
         }
     }
 }
