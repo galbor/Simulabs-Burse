@@ -12,6 +12,7 @@ using Simulabs_Burse_Console.Offer;
 using Simulabs_Burse_Console.POD;
 using Simulabs_Burse_Console.Trader;
 using Simulabs_Burse_Console.Utility;
+using Simulabs_Burse_Console.Stock_Market;
 
 namespace Simulabs_Burse_Console
 {

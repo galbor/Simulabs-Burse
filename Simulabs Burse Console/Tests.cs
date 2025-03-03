@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Simulabs_Burse_Console.Company;
 using Simulabs_Burse_Console.Offer;
 using Simulabs_Burse_Console.Trader;
+using Simulabs_Burse_Console.Stock_Market;
 
 namespace Simulabs_Burse_Console
 {

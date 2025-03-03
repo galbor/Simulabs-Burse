@@ -4,7 +4,7 @@ using Simulabs_Burse_Console.Offer;
 using Simulabs_Burse_Console.POD;
 using Simulabs_Burse_Console.Trader;
 
-namespace Simulabs_Burse_Console;
+namespace Simulabs_Burse_Console.Stock_Market;
 
 public interface IStockMarket
 {

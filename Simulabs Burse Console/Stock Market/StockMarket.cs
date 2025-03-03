@@ -13,7 +13,7 @@ using Simulabs_Burse_Console.POD;
 using Simulabs_Burse_Console.Trader;
 using Simulabs_Burse_Console.Utility;
 
-namespace Simulabs_Burse_Console
+namespace Simulabs_Burse_Console.Stock_Market
 {
     public class StockMarket : IStockMarket
     {
