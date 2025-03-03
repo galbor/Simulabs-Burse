@@ -38,7 +38,6 @@ public interface IStockMarket
     public ICompany GetCompanyFromId(string id);
 
     public void CreateTrader(Dictionary<string, object> jsonDictionary);
-    public void CreateTrader(ITrader trader);
     public void CreateCompany(Dictionary<string, object> jsonDictionary);
 
     /**

@@ -95,20 +95,15 @@ namespace Simulabs_Burse_Console.Stock_Market
         private static IOffer[] GetOffersAsArray(Dictionary<string, List<IOffer>> offersDict, string id)
         {
             var offers = GetOfferList(offersDict, id);
-            IOffer[] res = new IOffer[offers.Count];
-            offers.CopyTo(res);
-            res = res.Where(IsLegalOffer).ToArray();
-            return res;
+
+            return MyUtils.GetCollectionAsArrayWhere(offers, IsLegalOffer);
         }
 
         private static IOffer[] GetOffersAsArray(Dictionary<string, SortedSet<IOffer>> offersDict, string id)
         {
             var offers = GetOfferSet(offersDict, id);
 
-            IOffer[] res = new IOffer[offers.Count];
-            offers.CopyTo(res);
-            res = res.Where(IsLegalOffer).ToArray();
-            return res;
+            return MyUtils.GetCollectionAsArrayWhere(offers, IsLegalOffer);
         }
 
         public IOffer[] GetTraderOffers(string id)

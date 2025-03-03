@@ -58,5 +58,16 @@ namespace Simulabs_Burse_Console.Utility
             if (input.Length <= command.Length) return "";
             return input.Substring(command.Length + 1);
         }
+
+        /**
+         * get the collection as an array only where predicate applies
+         */
+        public static T[] GetCollectionAsArrayWhere<T>(ICollection<T> collection, Func<T, bool> predicate)
+        {
+            T[] res = new T[collection.Count];
+            collection.CopyTo(res, 0);
+            res = res.Where(predicate).ToArray();
+            return res;
+        }
     }
 }
