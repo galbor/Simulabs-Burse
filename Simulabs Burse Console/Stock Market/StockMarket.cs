@@ -18,8 +18,6 @@ namespace Simulabs_Burse_Console.Stock_Market
 {
     public class StockMarket : IStockMarket
     {
-        private IStockMarketFactory factory = new RegularStockMarketFactory();
-
         private readonly Dictionary<string, IStockMarket.CompanyAndPrice> _companies = new Dictionary<string, IStockMarket.CompanyAndPrice>(); //_companies and prices
         private readonly Dictionary<string, ITrader> _traders = new Dictionary<string, ITrader>();
 
@@ -30,7 +28,9 @@ namespace Simulabs_Burse_Console.Stock_Market
         private readonly List<IOffer> _pendingOffers = new List<IOffer>();
         private readonly List<IOffer> _pendingDeleteOffers = new List<IOffer>();
 
-        private readonly IPriceChanger priceChanger;
+        private readonly IPriceChanger _priceChanger;
+        private readonly IStockMarketFactory _factory;
+
 
         private bool _run = false;
 
@@ -46,7 +46,8 @@ namespace Simulabs_Burse_Console.Stock_Market
 
         private StockMarket()
         {
-            priceChanger = new RegularPriceChanger(_companies.Values, new GaussianNewPriceCalculator());
+            _priceChanger = new RegularPriceChanger(_companies.Values, new GaussianNewPriceCalculator());
+            _factory = new RegularStockMarketFactory();
         }
 
         private static IStockMarket GetInstance()
@@ -136,7 +137,7 @@ namespace Simulabs_Burse_Console.Stock_Market
 
         public IOffer MakeOffer(ITrader trader, ICompany company, decimal price, uint amount, bool isSellOffer)
         {
-            IOffer offer = factory.NewOffer(company, trader, price, amount, isSellOffer);
+            IOffer offer = _factory.NewOffer(company, trader, price, amount, isSellOffer);
             lock (_pendingOffers)
             {
                 _pendingOffers.Add(offer);
@@ -248,7 +249,7 @@ namespace Simulabs_Burse_Console.Stock_Market
          */
         private IOffer OfferWithLessAmt(IOffer prevOffer, uint amtToRemove)
         {
-            return factory.NewOffer(prevOffer.Company, prevOffer.Trader, prevOffer.Price,
+            return _factory.NewOffer(prevOffer.Company, prevOffer.Trader, prevOffer.Price,
                 prevOffer.Amount - amtToRemove, prevOffer.IsSellOffer);
         }
 
@@ -338,14 +339,14 @@ namespace Simulabs_Burse_Console.Stock_Market
             decimal price = JsonSerializer.Deserialize<decimal>((JsonElement)jsonDictionary["currentPrice"]);
             uint amount = JsonSerializer.Deserialize<uint>((JsonElement)jsonDictionary["amount"]);
 
-            ICompany company = factory.NewCompany(id, name);
+            ICompany company = _factory.NewCompany(id, name);
 
             lock (_companies)
             {
                 _companies.Add(company.Id, new IStockMarket.CompanyAndPrice(company, price));
             }
 
-            ITrader trader = factory.NewCompanyTrader(company, amount);
+            ITrader trader = _factory.NewCompanyTrader(company, amount);
             CreateTrader(trader);
             MakeOffer(trader, company, price, amount, true);
         }
@@ -356,7 +357,7 @@ namespace Simulabs_Burse_Console.Stock_Market
             string name = JsonSerializer.Deserialize<string>((JsonElement)jsonDictionary["name"]);
             decimal money = JsonSerializer.Deserialize<decimal>((JsonElement)jsonDictionary["money"]);
 
-            ITrader trader = factory.NewTrader(id, name, money);
+            ITrader trader = _factory.NewTrader(id, name, money);
 
             lock (_traders)
             {
@@ -453,7 +454,7 @@ namespace Simulabs_Burse_Console.Stock_Market
 
                 _run = true;
                 Thread work = new Thread(WorkThread);
-                Thread priceChange = priceChanger.PriceChangerThread(); //I don't think it matters if there's race conditions on this thread
+                Thread priceChange = _priceChanger.PriceChangerThread(); //I don't think it matters if there's race conditions on this thread
 
                 work.Start();
                 priceChange.Start();
