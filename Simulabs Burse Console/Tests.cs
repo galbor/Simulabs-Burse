@@ -61,6 +61,11 @@ namespace Simulabs_Burse_Console
             TestMultithreading(richtraderId, richtraderId2);
         }
 
+        private static bool HasStock(ITrader trader, string stockId)
+        {
+            return trader.StockAmount(stockId) > 0;
+        }
+
         /**
          * tests:
          * buying stock from previous offer
@@ -91,14 +96,14 @@ namespace Simulabs_Burse_Console
             while (stockMarket.GetTraderOffers(traderId).Length == 0)
             {
                 Thread.Sleep(2); //wait for the offer to pass
-                if (trader.HasStock(pricystockid))
+                if (HasStock(trader, pricystockid))
                 {
                     Console.Error.WriteLine("TestBuy() failed - bought stock for price too low");
                     res = false;
                     break;
                 }
             }
-            if (trader.HasStock(stockid))
+            if (HasStock(trader, stockid))
             {
                 Console.Error.WriteLine("TestBuy() failed - bought too expensive stock");
                 res = false;

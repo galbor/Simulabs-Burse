@@ -50,7 +50,7 @@ namespace Simulabs_Burse_Console.Trader
             if (price * amt > Money) throw new ArgumentException("Trader8History.BuyStocks() too pricey");
             Money -= price * amt;
 
-            if (HasStock(companyId)) _portfolio[companyId] += amt;
+            if (StockAmount(companyId) > 0) _portfolio[companyId] += amt;
             else _portfolio[companyId] = amt;
         }
 

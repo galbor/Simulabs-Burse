@@ -27,5 +27,4 @@ public interface ITrader
     public void MakeSale(Sale sale);
 
     public uint StockAmount(string id);
-    public bool HasStock(string id);
 }

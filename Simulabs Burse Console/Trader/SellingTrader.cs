@@ -30,11 +30,6 @@ public abstract class SellingTrader : ITrader
         return 0;
     }
 
-    public bool HasStock(string id)
-    {
-        return StockAmount(id) > 0;
-    }
-
     public abstract Sale[] GetRecentSales();
     public abstract void MakeSale(Sale sale);
 
