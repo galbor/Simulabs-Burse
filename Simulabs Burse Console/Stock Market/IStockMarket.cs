@@ -68,7 +68,7 @@ public interface IStockMarket
     public List<ITrader> GetAllTraders();
     public List<ICompany> GetAllCompanies();
 
-    protected class CompanyAndPrice(ICompany company, decimal price)
+    public class CompanyAndPrice(ICompany company, decimal price)
     {
         public ICompany Company { get; } = company;
         public decimal Price { get; set; } = price;

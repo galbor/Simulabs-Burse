@@ -10,6 +10,7 @@ using Simulabs_Burse_Console.Company;
 using Simulabs_Burse_Console.Factories;
 using Simulabs_Burse_Console.Offer;
 using Simulabs_Burse_Console.POD;
+using Simulabs_Burse_Console.PriceChanger;
 using Simulabs_Burse_Console.Trader;
 using Simulabs_Burse_Console.Utility;
 
@@ -29,6 +30,8 @@ namespace Simulabs_Burse_Console.Stock_Market
         private readonly List<IOffer> _pendingOffers = new List<IOffer>();
         private readonly List<IOffer> _pendingDeleteOffers = new List<IOffer>();
 
+        private readonly IPriceChanger priceChanger;
+
         private bool _run = false;
 
         private static object _lock = new Object();
@@ -43,6 +46,7 @@ namespace Simulabs_Burse_Console.Stock_Market
 
         private StockMarket()
         {
+            priceChanger = new RegularPriceChanger(_companies.Values, new GaussianNewPriceCalculator());
         }
 
         private static IStockMarket GetInstance()
@@ -441,33 +445,6 @@ namespace Simulabs_Burse_Console.Stock_Market
             }
         }
 
-        /**
-         * I honestly don't think it matters if there's race conditions here
-         */
-        private void ChangeCompanyPrices()
-        {
-            const int sleepTime = 20000; //MAGIC NUMBER
-            while (_run)
-            {
-                Thread.Sleep(sleepTime);
-                foreach (var companyContainer in _companies.Values)
-                {
-                    companyContainer.Price = NewPrice(companyContainer.Price);
-                }
-            }
-        }
-
-        /**
-         * gets random non-negative decimal based on prev decimal
-         * using a somewhat normal distribution (without negatives)
-         */
-        private decimal NewPrice(decimal prevPrice)
-        {
-            decimal stdDev = prevPrice / 10; //MAGIC NUMBER
-            decimal distanceFromZero = 0.5M; //MAGIC NUMBER
-            return Math.Abs(MyUtils.NormalDistribution(prevPrice, stdDev) - distanceFromZero) + distanceFromZero;
-        }
-
         public bool Init()
         {
             lock (_lock)
@@ -476,7 +453,7 @@ namespace Simulabs_Burse_Console.Stock_Market
 
                 _run = true;
                 Thread work = new Thread(WorkThread);
-                Thread priceChange = new Thread(ChangeCompanyPrices);
+                Thread priceChange = priceChanger.PriceChangerThread(); //I don't think it matters if there's race conditions on this thread
 
                 work.Start();
                 priceChange.Start();
