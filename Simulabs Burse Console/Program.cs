@@ -7,6 +7,8 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Simulabs_Burse_Console.Company;
+using Simulabs_Burse_Console.Offer;
 using Simulabs_Burse_Console.POD;
 using Simulabs_Burse_Console.Trader;
 using Simulabs_Burse_Console.Utility;

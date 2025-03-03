@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace Simulabs_Burse_Console;
+namespace Simulabs_Burse_Console.Offer;
 
 public class OfferComparerByPrice : IComparer<IOffer>
 {

@@ -1,11 +1,11 @@
 ﻿using Simulabs_Burse_Console.POD;
 
-namespace Simulabs_Burse_Console;
+namespace Simulabs_Burse_Console.Company;
 
 public interface ICompany
 {
     public string Id { get; }
-    public string Name {get;}
+    public string Name { get; }
 
     /**
      * returns recent sales

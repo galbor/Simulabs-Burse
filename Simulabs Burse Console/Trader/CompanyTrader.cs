@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Simulabs_Burse_Console.Company;
 using Simulabs_Burse_Console.POD;
 
 namespace Simulabs_Burse_Console.Trader;

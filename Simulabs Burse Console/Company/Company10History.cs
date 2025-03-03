@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 using Simulabs_Burse_Console.POD;
 using Simulabs_Burse_Console.Utility;
 
-namespace Simulabs_Burse_Console
+namespace Simulabs_Burse_Console.Company
 {
     public class Company10History : ICompany
     {
         public string Id { get; }
-        public string Name {get;}
+        public string Name { get; }
         private readonly LimitedQueue<Sale> _recentSaleHistory;
 
         public Company10History(string id, string name)

@@ -1,4 +1,4 @@
-﻿namespace Simulabs_Burse_Console;
+﻿namespace Simulabs_Burse_Console.Offer.IDGenerator;
 
 public class IntIdGenerator : IIdGenerator<int>
 {
