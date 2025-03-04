@@ -4,7 +4,7 @@ using Simulabs_Burse_Console.Offer;
 
 namespace Simulabs_Burse_Console.POD;
 
-public readonly struct TraderInfo(string id, string name, decimal money, KeyValuePair<string, uint>[] portfolio, IOffer[] offers)
+public class TraderInfo(string id, string name, decimal money, KeyValuePair<string, uint>[] portfolio, IOffer[] offers)
 {
     public readonly string Id = id;
     public readonly string Name = name;

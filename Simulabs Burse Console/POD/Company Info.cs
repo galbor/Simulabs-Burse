@@ -3,7 +3,7 @@ using Simulabs_Burse_Console.Offer;
 
 namespace Simulabs_Burse_Console.POD;
 
-public readonly struct CompanyInfo (string id, string name, decimal price, IOffer[] offers, Sale[] recentSales)
+public class CompanyInfo (string id, string name, decimal price, IOffer[] offers, Sale[] recentSales)
 {
     public readonly string Id = id;
     public readonly string Name = name;

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Simulabs_Burse_Console.POD
 {
-    public readonly struct Sale(string sellerId, string buyerId, string companyId, decimal price, uint amount)
+    public class Sale(string sellerId, string buyerId, string companyId, decimal price, uint amount)
     {
         public readonly string SellerId = sellerId;
         public readonly string BuyerId = buyerId;
