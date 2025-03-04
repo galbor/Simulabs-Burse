@@ -20,14 +20,14 @@ namespace Simulabs_Burse_Console.Stock_Market
     public class StockMarket : IStockMarket
     {
         private readonly Dictionary<string, IStockMarket.CompanyAndPrice> _companies = new Dictionary<string, IStockMarket.CompanyAndPrice>(); //_companies and prices
-        private readonly Dictionary<string, ITrader> _traders = new Dictionary<string, ITrader>();
+        private readonly Dictionary<string, ITrader> _traders = new();
 
-        private readonly Dictionary<string, List<IOffer>> _allTraderOffers = new Dictionary<string, List<IOffer>>(); //traderId -> list(offer)
-        private readonly Dictionary<string, SortedSet<IOffer>> _allSellCompanyOffers = new Dictionary<string, SortedSet<IOffer>>(); //companyId -> set(offer)
-        private readonly Dictionary<string, SortedSet<IOffer>> _allBuyCompanyOffers = new Dictionary<string, SortedSet<IOffer>>(); //companyId -> set(offer)
+        private readonly Dictionary<string, List<IOffer>> _allTraderOffers = new(); //traderId -> list(offer)
+        private readonly Dictionary<string, SortedSet<IOffer>> _allSellCompanyOffers = []; //companyId -> set(offer)
+        private readonly Dictionary<string, SortedSet<IOffer>> _allBuyCompanyOffers = []; //companyId -> set(offer)
 
-        private readonly List<IOffer> _pendingOffers = new List<IOffer>();
-        private readonly List<IOffer> _pendingDeleteOffers = new List<IOffer>();
+        private readonly List<IOffer> _pendingOffers = new();
+        private readonly List<IOffer> _pendingDeleteOffers = new();
 
         private readonly IPriceChanger _priceChanger;
         private readonly IStockMarketFactory _factory;
