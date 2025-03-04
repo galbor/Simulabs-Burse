@@ -14,6 +14,7 @@ using Simulabs_Burse_Console.POD;
 using Simulabs_Burse_Console.PriceChanger;
 using Simulabs_Burse_Console.Trader;
 using Simulabs_Burse_Console.Utility;
+using Simulabs_Burse_Console.WorkerBee;
 
 namespace Simulabs_Burse_Console.Stock_Market
 {
@@ -32,12 +33,12 @@ namespace Simulabs_Burse_Console.Stock_Market
         private readonly IPriceChanger _priceChanger;
         private readonly IStockMarketFactory _factory;
         private readonly ILegalOfferChecker _legalOfferChecker;
+        private readonly IWorkerBee<IOffer> _workerBee;
 
 
         private bool _run = false;
 
         private static object _lock = new Object();
-        private bool _isDoingWork = false;
 
         private static IStockMarket _instance = null;
 
@@ -51,6 +52,11 @@ namespace Simulabs_Burse_Console.Stock_Market
             _priceChanger = new RegularPriceChanger(_companies.Values, new GaussianNewPriceCalculator());
             _factory = new RegularStockMarketFactory();
             _legalOfferChecker = new RegularLegalOfferChecker();
+            _workerBee = new CopyingWorkerBee<IOffer>(new Dictionary<ICollection<IOffer>, Action<IOffer>>
+            {
+                {_pendingOffers, AddOffer},
+                {_pendingDeleteOffers, DeleteOffer}
+            });
         }
 
         private static IStockMarket GetInstance()
@@ -170,21 +176,7 @@ namespace Simulabs_Burse_Console.Stock_Market
 
         public bool HasPendingRequests()
         {
-            if (_isDoingWork) return true;
-
-            bool res = false;
-            lock (_pendingDeleteOffers)
-            {
-                res = res || _pendingDeleteOffers.Any();
-            }
-
-            if (res) return res;
-            lock (_pendingOffers)
-            {
-                res = res || _pendingOffers.Any();
-            }
-
-            return res;
+            return _workerBee.IsDoingWork();
         }
 
         /**
@@ -319,7 +311,7 @@ namespace Simulabs_Burse_Console.Stock_Market
          * if isSellOffer then looks for buy offers and vice versa
          * if there's no such offer, returns null offer
          */
-        //I'd want to DI this method, but it depends on companyOffers being a SortedSet, and then it depends on this implementation of CompanyOffers
+        //I'd want to DI this method, but it depends on companyOffers being a SortedSet, and then it depends on this implementation of companyOffers
         private IOffer FindFittingOffer(SortedSet<IOffer> companyOffers, decimal price, bool isSellOffer)
         {
             if (companyOffers.Count == 0) return null;
@@ -405,47 +397,16 @@ namespace Simulabs_Burse_Console.Stock_Market
                 companyContainer.Price, GetCompanyOffers(id), companyContainer.Company.GetRecentSales());
         }
 
-        /**
-         * locks and gets list and clears it
-         * does action on all list
-         */
-        private void DoWork<T>(List<T> lst, Action<T> action)
-        {
-            List<T> copy;
-            lock (lst)
-            {
-                _isDoingWork = lst.Count > 0;
-
-                copy = lst.ToList();
-                lst.Clear();
-            }
-            copy.ForEach(action);
-            _isDoingWork = false;
-        }
-
-
-
-        private void WorkThread()
-        {
-            while (_run)
-            {
-                DoWork(_pendingOffers, AddOffer);
-                DoWork(_pendingDeleteOffers, DeleteOffer);
-                Thread.Sleep(1);
-            }
-        }
-
         public bool Init()
         {
+            _workerBee.StartWork();
             lock (_lock)
             {
                 if (_run) return false;
 
                 _run = true;
-                Thread work = new Thread(WorkThread);
                 Thread priceChange = _priceChanger.PriceChangerThread(); //I don't think it matters if there's race conditions on this thread
 
-                work.Start();
                 priceChange.Start();
 
                 return true;
