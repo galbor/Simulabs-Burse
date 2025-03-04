@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Simulabs_Burse_Console.Company;
 using Simulabs_Burse_Console.POD;
+using Simulabs_Burse_Console.Trader.MakeSaleMethod;
 
 namespace Simulabs_Burse_Console.Trader;
 
@@ -15,18 +16,12 @@ public class CompanyTrader : SellingTrader
         protected set { }
     }
 
-    public CompanyTrader(ICompany company, uint amount)
+    public CompanyTrader(ICompany company, uint amount, ISeller seller)
     {
         Id = company.Name + company.Id;
         Name = company.Name;
         _portfolio[company.Id] = amount;
-    }
-
-    public override void MakeSale(Sale sale)
-    {
-        if (sale.SellerId != Id)
-            throw new ArgumentException("CompanyTrader.MakeSale() can't make sale it's not the seller in");
-        SellStocks(sale.CompanyId, sale.Price, sale.Amount);
+        Seller = seller;
     }
 
     public override Sale[] GetRecentSales()

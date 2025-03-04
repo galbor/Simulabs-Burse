@@ -7,6 +7,7 @@ using Simulabs_Burse_Console.Company;
 using Simulabs_Burse_Console.Offer;
 using Simulabs_Burse_Console.Offer.IDGenerator;
 using Simulabs_Burse_Console.Trader;
+using Simulabs_Burse_Console.Trader.MakeSaleMethod;
 
 namespace Simulabs_Burse_Console.Factories
 {
@@ -31,12 +32,12 @@ namespace Simulabs_Burse_Console.Factories
 
         public ITrader NewTrader(string id, string name, decimal money)
         {
-            return new Trader8History(id, name, money);
+            return new Trader8History(id, name, money, new LegalSeller());
         }
 
         public ITrader NewCompanyTrader(ICompany company, uint amount)
         {
-            return new CompanyTrader(company, amount);
+            return new CompanyTrader(company, amount, new LegalSeller());
         }
     }
 }

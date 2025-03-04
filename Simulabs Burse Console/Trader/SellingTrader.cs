@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Simulabs_Burse_Console.POD;
+using Simulabs_Burse_Console.Trader.MakeSaleMethod;
 using Simulabs_Burse_Console.Utility;
 
 namespace Simulabs_Burse_Console.Trader;
@@ -10,6 +11,8 @@ public abstract class SellingTrader : ITrader
     public abstract string Id { get; }
     public abstract string Name { get; }
     public abstract decimal Money { get; protected set; }
+
+    public ISeller Seller { get; set; }
 
     protected readonly Dictionary<string, uint> _portfolio = new Dictionary<string, uint>();
 
@@ -25,17 +28,15 @@ public abstract class SellingTrader : ITrader
     }
 
     public abstract Sale[] GetRecentSales();
-    public abstract void MakeSale(Sale sale);
 
-    /**
-     * throws exception if doesn't have said stock
-     * assumes price >= 0
-     */
-    protected virtual void SellStocks(string companyId, decimal price, uint amt)
+    public virtual void MakeSale(Sale sale)
     {
-        if (StockAmount(companyId) < amt)
-            throw new ArgumentException("ITrader.SellStocks() doesn't have the stock to sell");
+        decimal money = Money;
+        uint stockAmt = StockAmount(sale.CompanyId);
 
-        _portfolio[companyId] -= amt;
+        Seller.MakeSale(Id, sale, ref money, ref stockAmt);
+
+        Money = money;
+        _portfolio[sale.CompanyId] = stockAmt;
     }
 }

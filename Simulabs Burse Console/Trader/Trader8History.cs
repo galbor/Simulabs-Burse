@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Simulabs_Burse_Console.POD;
+using Simulabs_Burse_Console.Trader.MakeSaleMethod;
 using Simulabs_Burse_Console.Utility;
 
 namespace Simulabs_Burse_Console.Trader
@@ -16,12 +17,13 @@ namespace Simulabs_Burse_Console.Trader
         public override decimal Money { get; protected set; }
         private readonly LimitedQueue<Sale> _recentSaleHistory;
 
-        public Trader8History(string id, string name, decimal money)
+    public Trader8History(string id, string name, decimal money, ISeller seller)
         {
             Id = id;
             Name = name;
             Money = money;
             _recentSaleHistory = new LimitedQueue<Sale>(8); //MAGIC NUMBER specified in word document
+            Seller = seller;
         }
 
         /**
@@ -35,29 +37,8 @@ namespace Simulabs_Burse_Console.Trader
 
         public override void MakeSale(Sale sale)
         {
-            if (sale.SellerId == Id) SellStocks(sale.CompanyId, sale.Price, sale.Amount);
-            else if (sale.BuyerId == Id) BuyStocks(sale.CompanyId, sale.Price, sale.Amount);
-            else throw new ArgumentException("Trader8History can't make sale he's not included in");
-
+            base.MakeSale(sale);
             _recentSaleHistory.Enqueue(sale);
-        }
-
-        /**
-         * throws exception if price*amt > Money
-         */
-        private void BuyStocks(string companyId, decimal price, uint amt)
-        {
-            if (price * amt > Money) throw new ArgumentException("Trader8History.BuyStocks() too pricey");
-            Money -= price * amt;
-
-            if (StockAmount(companyId) > 0) _portfolio[companyId] += amt;
-            else _portfolio[companyId] = amt;
-        }
-
-        protected override void SellStocks(string companyId, decimal price, uint amt)
-        {
-            base.SellStocks(companyId, price, amt);
-            Money += price * amt;
         }
     }
 }
