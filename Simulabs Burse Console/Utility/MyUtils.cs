@@ -69,5 +69,17 @@ namespace Simulabs_Burse_Console.Utility
             res = res.Where(predicate).ToArray();
             return res;
         }
+
+        public static KeyValuePair<T, V>[] GetDictAsKeyValuePairArr<T, V>(Dictionary<T, V> dict)
+        {
+            KeyValuePair<T, V>[] res = new KeyValuePair<T, V>[dict.Keys.Count];
+            uint cnt = 0;
+            foreach (var pair in dict)
+            {
+                res[cnt++] = pair;
+            }
+
+            return res;
+        }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Simulabs_Burse_Console.POD;
+using Simulabs_Burse_Console.Utility;
 
 namespace Simulabs_Burse_Console.Trader;
 
@@ -14,14 +15,7 @@ public abstract class SellingTrader : ITrader
 
     public KeyValuePair<string, uint>[] GetPortfolio()
     {
-        KeyValuePair<string, uint>[] res = new KeyValuePair<string, uint>[_portfolio.Keys.Count];
-        uint cnt = 0;
-        foreach (var pair in _portfolio)
-        {
-            res[cnt++] = pair;
-        }
-
-        return res;
+        return MyUtils.GetDictAsKeyValuePairArr(_portfolio);
     }
 
     public uint StockAmount(string id)
