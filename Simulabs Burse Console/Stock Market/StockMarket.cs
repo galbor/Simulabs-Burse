@@ -381,7 +381,7 @@ namespace Simulabs_Burse_Console.Stock_Market
         public ICompany GetCompanyFromId(string id)
         {
             IStockMarket.CompanyAndPrice resContainer = GetCompanyAndPriceFromId(id);
-            return resContainer == null ? null : resContainer.Company;
+            return resContainer?.Company;
         }
         public ITrader GetTraderFromId(string id)
         {
