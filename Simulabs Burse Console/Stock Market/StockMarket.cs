@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Simulabs_Burse_Console.Company;
 using Simulabs_Burse_Console.Factories;
 using Simulabs_Burse_Console.Offer;
+using Simulabs_Burse_Console.Offer.LegalOfferChecker;
 using Simulabs_Burse_Console.POD;
 using Simulabs_Burse_Console.PriceChanger;
 using Simulabs_Burse_Console.Trader;
@@ -30,6 +31,7 @@ namespace Simulabs_Burse_Console.Stock_Market
 
         private readonly IPriceChanger _priceChanger;
         private readonly IStockMarketFactory _factory;
+        private readonly ILegalOfferChecker _legalOfferChecker;
 
 
         private bool _run = false;
@@ -48,6 +50,7 @@ namespace Simulabs_Burse_Console.Stock_Market
         {
             _priceChanger = new RegularPriceChanger(_companies.Values, new GaussianNewPriceCalculator());
             _factory = new RegularStockMarketFactory();
+            _legalOfferChecker = new RegularLegalOfferChecker();
         }
 
         private static IStockMarket GetInstance()
@@ -97,18 +100,18 @@ namespace Simulabs_Burse_Console.Stock_Market
             return res;
         }
 
-        private static IOffer[] GetOffersAsArray(Dictionary<string, List<IOffer>> offersDict, string id)
+        private IOffer[] GetOffersAsArray(Dictionary<string, List<IOffer>> offersDict, string id)
         {
             var offers = GetOfferList(offersDict, id);
 
-            return MyUtils.GetCollectionAsArrayWhere(offers, IsLegalOffer);
+            return MyUtils.GetCollectionAsArrayWhere(offers, _legalOfferChecker.IsLegalOffer);
         }
 
-        private static IOffer[] GetOffersAsArray(Dictionary<string, SortedSet<IOffer>> offersDict, string id)
+        private IOffer[] GetOffersAsArray(Dictionary<string, SortedSet<IOffer>> offersDict, string id)
         {
             var offers = GetOfferSet(offersDict, id);
 
-            return MyUtils.GetCollectionAsArrayWhere(offers, IsLegalOffer);
+            return MyUtils.GetCollectionAsArrayWhere(offers, _legalOfferChecker.IsLegalOffer);
         }
 
         public IOffer[] GetTraderOffers(string id)
@@ -213,7 +216,7 @@ namespace Simulabs_Burse_Console.Stock_Market
          */
         private void AddOffer(IOffer offer)
         {
-            if (!IsLegalOffer(offer)) return;
+            if (!_legalOfferChecker.IsLegalOffer(offer)) return;
 
             List<IOffer> traderOffers = GetOfferList(_allTraderOffers, offer.Trader.Id);
             var companyOffers = offer.IsSellOffer ?
@@ -228,7 +231,7 @@ namespace Simulabs_Burse_Console.Stock_Market
             DeleteBadOffers(offer, companyOffers);
 
             IOffer bestExistingOffer;
-            while (IsLegalOffer(bestExistingOffer = FindFittingOffer(companyOffers, offer.Price, offer.IsSellOffer))
+            while (_legalOfferChecker.IsLegalOffer(bestExistingOffer = FindFittingOffer(companyOffers, offer.Price, offer.IsSellOffer))
                    && offer.Amount > 0)
             {
                 offer = MakeSale(offer, bestExistingOffer, companyOffers);
@@ -300,7 +303,7 @@ namespace Simulabs_Burse_Console.Stock_Market
          */
         private void DeleteBadOffers(IOffer offer, SortedSet<IOffer> companyOffers)
         {
-            static bool IsBad(IOffer offer) => !IsLegalOffer(offer);
+            bool IsBad(IOffer offer) => !_legalOfferChecker.IsLegalOffer(offer);
 
             var badOffers = companyOffers.Where(IsBad);
             foreach (var badOffer in badOffers)
@@ -316,13 +319,14 @@ namespace Simulabs_Burse_Console.Stock_Market
          * if isSellOffer then looks for buy offers and vice versa
          * if there's no such offer, returns null offer
          */
-        private static IOffer FindFittingOffer(SortedSet<IOffer> companyOffers, decimal price, bool isSellOffer)
+        //I'd want to DI this method, but it depends on companyOffers being a SortedSet, and then it depends on this implementation of CompanyOffers
+        private IOffer FindFittingOffer(SortedSet<IOffer> companyOffers, decimal price, bool isSellOffer)
         {
             if (companyOffers.Count == 0) return null;
 
             IOffer bestOffer = isSellOffer ? companyOffers.Max : companyOffers.Min;
 
-            if (!IsLegalOffer(bestOffer)) return null;
+            if (!_legalOfferChecker.IsLegalOffer(bestOffer)) return null;
 
             if (bestOffer.Price == price) return bestOffer;
 
@@ -359,10 +363,7 @@ namespace Simulabs_Burse_Console.Stock_Market
 
             ITrader trader = _factory.NewTrader(id, name, money);
 
-            lock (_traders)
-            {
-                _traders.Add(trader.Id, trader);
-            }
+            CreateTrader(trader);
         }
 
         public void CreateTrader(ITrader trader)
@@ -402,18 +403,6 @@ namespace Simulabs_Burse_Console.Stock_Market
                 throw new ArgumentException("StockMarket.GetCompanyInfo() id doesn't fit any company");
             return new CompanyInfo(companyContainer.Company.Id, companyContainer.Company.Name,
                 companyContainer.Price, GetCompanyOffers(id), companyContainer.Company.GetRecentSales());
-        }
-
-        /**
-        * if sell offer checks the seller has the stock
-        * if buy offer checks the buyer has the money
-        */
-        private static bool IsLegalOffer(IOffer offer)
-        {
-            if (offer == null) return false;
-            if (offer.IsSellOffer && offer.Trader.StockAmount(offer.Company.Id) < offer.Amount) return false;
-            if (!offer.IsSellOffer && offer.Trader.Money < offer.Price) return false;
-            return true;
         }
 
         /**
